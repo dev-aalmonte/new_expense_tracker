@@ -1,6 +1,7 @@
 import 'package:new_expense_tracker/models/account.dart';
 import 'package:new_expense_tracker/pages/add_transaction_page.dart';
 import 'package:new_expense_tracker/pages/chart_page.dart';
+import 'package:new_expense_tracker/pages/debug/not_found_page.dart';
 import 'package:new_expense_tracker/pages/home_page.dart';
 import 'package:new_expense_tracker/pages/transactions_page.dart';
 import 'package:new_expense_tracker/providers/account_provider.dart';
@@ -111,7 +112,9 @@ class _TabsPageState extends State<TabsPage> {
               ),
               const Padding(
                 padding: EdgeInsets.symmetric(horizontal: 16),
-                child: ChartPage(),
+                child: NotFoundPage(),
+                // TODO: Update chart page to solve crash issues
+                // child: ChartPage(),
               ),
             ],
           ),
