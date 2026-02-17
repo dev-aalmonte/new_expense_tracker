@@ -117,10 +117,12 @@ class _HomePageState extends State<HomePage> {
           ),
           _expensesCard(context),
           Padding(
-            padding: const EdgeInsets.only(top: 16),
+            padding: const EdgeInsets.only(top: 32),
             child: Text(
               "Recent Transactions",
-              style: Theme.of(context).textTheme.titleLarge,
+              style: Theme.of(
+                context,
+              ).textTheme.titleLarge!.copyWith(height: .1),
             ),
           ),
           Expanded(
