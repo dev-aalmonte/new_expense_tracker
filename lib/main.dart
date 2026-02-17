@@ -33,31 +33,7 @@ class MyApp extends StatelessWidget {
       child: MaterialApp(
         title: 'Expense Tracker',
         debugShowCheckedModeBanner: false,
-        theme: ThemeData().copyWith(
-          useMaterial3: true,
-          colorScheme: kColorScheme,
-          appBarTheme: const AppBarTheme().copyWith(
-            backgroundColor: kColorScheme.primaryContainer,
-            foregroundColor: kColorScheme.onPrimaryContainer,
-          ),
-          textTheme: ThemeData().textTheme.copyWith(
-            displayLarge: ThemeData().textTheme.displayLarge!.copyWith(),
-            displayMedium: ThemeData().textTheme.displayMedium!.copyWith(),
-            displaySmall: ThemeData().textTheme.displaySmall!.copyWith(),
-            headlineLarge: ThemeData().textTheme.headlineLarge!.copyWith(),
-            headlineMedium: ThemeData().textTheme.headlineMedium!.copyWith(),
-            headlineSmall: ThemeData().textTheme.headlineSmall!.copyWith(),
-            titleLarge: ThemeData().textTheme.titleLarge!.copyWith(),
-            titleMedium: ThemeData().textTheme.titleMedium!.copyWith(),
-            titleSmall: ThemeData().textTheme.titleSmall!.copyWith(),
-            labelLarge: ThemeData().textTheme.labelLarge!.copyWith(),
-            labelMedium: ThemeData().textTheme.labelMedium!.copyWith(),
-            labelSmall: ThemeData().textTheme.labelSmall!.copyWith(),
-            bodyLarge: ThemeData().textTheme.bodyLarge!.copyWith(),
-            bodyMedium: ThemeData().textTheme.bodyMedium!.copyWith(),
-            bodySmall: ThemeData().textTheme.bodySmall!.copyWith(),
-          ),
-        ),
+        theme: ThemeData(colorScheme: kColorScheme, useMaterial3: true),
         home: const AccountPage(),
         routes: {
           TabsPage.route: (context) => const TabsPage(),

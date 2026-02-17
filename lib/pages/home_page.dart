@@ -18,7 +18,7 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  bool isMonthly = false;
+  bool isMonthly = true;
 
   @override
   Widget build(BuildContext context) {
@@ -36,78 +36,84 @@ class _HomePageState extends State<HomePage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Stack(
-            alignment: Alignment.centerLeft,
-            children: [
-              DropdownMenu(
-                initialSelection: activeAccount,
-                inputDecorationTheme: const InputDecorationTheme(
-                  border: InputBorder.none,
-                ),
-                menuStyle: const MenuStyle(
-                  visualDensity: VisualDensity.compact,
-                  padding: MaterialStatePropertyAll(EdgeInsets.zero),
-                ),
-                textStyle: Theme.of(context).textTheme.titleLarge,
-                trailingIcon: const Icon(null),
-                selectedTrailingIcon: const Icon(null),
-                label: const Text("Account"),
-                onSelected: (value) {
-                  accountProvider.activeAccount = value;
-                  transactionsProvider.resetData();
-                  Future.wait([
-                    transactionsProvider.fetchTransactionSummary(value!),
-                    transactionsProvider.groupByWeekYear(value),
-                  ]).then((_) {
-                    transactionsProvider.isDataLoaded = true;
-                    setState(() {});
-                  });
-                },
-                dropdownMenuEntries: accounts
-                    .map(
-                      (item) => DropdownMenuEntry(
-                        value: item,
-                        label: item.name,
-                        leadingIcon: const Icon(Icons.credit_card),
-                      ),
-                    )
-                    .toList(),
-              ),
-              Align(
-                alignment: Alignment.centerRight,
-                child: SegmentedButton(
-                  style: const ButtonStyle(
-                    visualDensity: VisualDensity(vertical: -4, horizontal: -4),
+          SizedBox(
+            height: 51.0,
+            child: Stack(
+              alignment: Alignment.centerLeft,
+              children: [
+                DropdownMenu(
+                  initialSelection: activeAccount,
+                  inputDecorationTheme: const InputDecorationTheme(
+                    border: InputBorder.none,
                   ),
-                  selected: {isMonthly},
-                  onSelectionChanged: (newSelection) async {
-                    Provider.of<TransactionsProvider>(
-                      context,
-                      listen: false,
-                    ).isMonthly = newSelection.first;
-                    Provider.of<TransactionsProvider>(
-                      context,
-                      listen: false,
-                    ).fetchTransactionSummary(activeAccount);
-                    setState(() {
-                      isMonthly = newSelection.first;
+                  menuStyle: const MenuStyle(
+                    visualDensity: VisualDensity.compact,
+                    padding: WidgetStatePropertyAll(EdgeInsets.zero),
+                  ),
+                  textStyle: Theme.of(context).textTheme.titleLarge,
+                  trailingIcon: const Icon(null),
+                  selectedTrailingIcon: const Icon(null),
+                  label: const Text("Account"),
+                  onSelected: (value) {
+                    accountProvider.activeAccount = value;
+                    transactionsProvider.resetData();
+                    Future.wait([
+                      transactionsProvider.fetchTransactionSummary(value!),
+                      transactionsProvider.groupByWeekYear(value),
+                    ]).then((_) {
+                      transactionsProvider.isDataLoaded = true;
+                      setState(() {});
                     });
                   },
-                  segments: const [
-                    ButtonSegment(
-                      value: false,
-                      label: Text("Week"),
-                      icon: Icon(Icons.calendar_view_week),
-                    ),
-                    ButtonSegment(
-                      value: true,
-                      label: Text("Month"),
-                      icon: Icon(Icons.calendar_view_month),
-                    ),
-                  ],
+                  dropdownMenuEntries: accounts
+                      .map(
+                        (item) => DropdownMenuEntry(
+                          value: item,
+                          label: item.name,
+                          leadingIcon: const Icon(Icons.credit_card),
+                        ),
+                      )
+                      .toList(),
                 ),
-              ),
-            ],
+                Align(
+                  alignment: Alignment.bottomRight,
+                  child: SegmentedButton(
+                    style: const ButtonStyle(
+                      visualDensity: VisualDensity(
+                        vertical: -4,
+                        horizontal: -4,
+                      ),
+                    ),
+                    selected: {isMonthly},
+                    onSelectionChanged: (newSelection) async {
+                      Provider.of<TransactionsProvider>(
+                        context,
+                        listen: false,
+                      ).isMonthly = newSelection.first;
+                      Provider.of<TransactionsProvider>(
+                        context,
+                        listen: false,
+                      ).fetchTransactionSummary(activeAccount);
+                      setState(() {
+                        isMonthly = newSelection.first;
+                      });
+                    },
+                    segments: const [
+                      ButtonSegment(
+                        value: false,
+                        label: Text("Week"),
+                        icon: Icon(Icons.calendar_view_week),
+                      ),
+                      ButtonSegment(
+                        value: true,
+                        label: Text("Month"),
+                        icon: Icon(Icons.calendar_view_month),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
           _expensesCard(context),
           Padding(
@@ -252,7 +258,7 @@ class _HomePageState extends State<HomePage> {
         children: [
           Row(
             children: [
-              CircleAvatar(maxRadius: 5, backgroundColor: color),
+              CircleAvatar(maxRadius: 4, backgroundColor: color),
               const SizedBox(width: 4),
               Text(
                 label,
@@ -262,7 +268,6 @@ class _HomePageState extends State<HomePage> {
               ),
             ],
           ),
-          const SizedBox(height: 4),
           Text(
             toCurrencyString(
               value.toStringAsFixed(2),
