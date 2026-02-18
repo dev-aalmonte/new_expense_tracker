@@ -78,10 +78,9 @@ class _TabsPageState extends State<TabsPage> {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
-    return WillPopScope(
-      onWillPop: () async {
+    return PopScope(
+      onPopInvokedWithResult: (bool didPop, dynamic _) async {
         Provider.of<TransactionsProvider>(context, listen: false).resetData();
-        return true;
       },
       child: Scaffold(
         body: Padding(

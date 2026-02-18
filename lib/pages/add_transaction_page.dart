@@ -1,3 +1,4 @@
+import 'package:new_expense_tracker/models/account.dart';
 import 'package:new_expense_tracker/models/transaction.dart';
 import 'package:new_expense_tracker/providers/account_provider.dart';
 import 'package:new_expense_tracker/providers/transactions_provider.dart';
@@ -20,7 +21,7 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
   final _amountController = TextEditingController();
   final _dateController = TextEditingController();
   final _descriptionController = TextEditingController();
-  late final _activeAccount;
+  late final Account _activeAccount;
 
   final DateTime _today = DateTime.now();
   late DateTime _actualDate;
@@ -39,7 +40,7 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
     _activeAccount = Provider.of<AccountProvider>(
       context,
       listen: false,
-    ).activeAccount;
+    ).activeAccount!;
   }
 
   void _submitForm() {

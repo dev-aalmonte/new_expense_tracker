@@ -9,8 +9,6 @@ import 'package:flutter/material.dart';
 import 'package:jiffy/jiffy.dart';
 
 class TransactionsProvider with ChangeNotifier {
-  // double deposit = 0.00;
-  // double spent = 0.00;
   double max = 0.00;
   bool isDataLoaded = false;
   bool isMonthly = false;
@@ -35,13 +33,16 @@ class TransactionsProvider with ChangeNotifier {
   }
 
   Future<void> addTransaction(
-      Transaction transaction, Account activeAccount) async {
+    Transaction transaction,
+    Account activeAccount,
+  ) async {
+    // Add transaction to the database
     var transactionObject = {
       "type": transaction.type.index,
       "amount": transaction.amount,
       "account_id": transaction.account.id,
       "date": transaction.date.toIso8601String(),
-      "description": transaction.description
+      "description": transaction.description,
     };
 
     if (transaction.type == TransactionType.spent) {
@@ -49,13 +50,21 @@ class TransactionsProvider with ChangeNotifier {
     }
 
     transaction.id = await DBHelper.insert('transactions', transactionObject);
+
+    // Update the account balance based on the transaction type
     _setDepositPreference(transaction, activeAccount);
+
+    // Refresh the transaction summary and chart data
+    fetchTransactionSummary(activeAccount);
+    groupByWeekYear(activeAccount);
 
     notifyListeners();
   }
 
   void _setDepositPreference(
-      Transaction transaction, Account activeAccount) async {
+    Transaction transaction,
+    Account activeAccount,
+  ) async {
     late Account updatedAccount;
     if (transaction.type == TransactionType.deposit) {
       updatedAccount = Account(
@@ -84,14 +93,12 @@ class TransactionsProvider with ChangeNotifier {
     if (!isMonthly) {
       // Weekly
       int todayWeekday = Jiffy.now().dayOfWeek;
-      DateTime weekStart =
-          DateTime.now().subtract(Duration(days: (todayWeekday - 1)));
+      DateTime weekStart = DateTime.now().subtract(
+        Duration(days: (todayWeekday - 1)),
+      );
       weekStart = DateTime(weekStart.year, weekStart.month, weekStart.day);
 
-      range = [
-        weekStart.toIso8601String(),
-        DateTime.now().toIso8601String(),
-      ];
+      range = [weekStart.toIso8601String(), DateTime.now().toIso8601String()];
     } else {
       // Monthly
       int todayYear = DateTime.now().year;
@@ -119,14 +126,16 @@ class TransactionsProvider with ChangeNotifier {
     List<Transaction> summaryTransactions = [];
 
     for (var item in dataList) {
-      summaryTransactions.add(Transaction(
-        id: item['id'],
-        account: await AccountProvider.fetchAccountById(item['account_id']),
-        type: TransactionType.values[item['type']],
-        amount: item['amount'],
-        date: DateTime.parse(item['date']),
-        description: item['description'],
-      ));
+      summaryTransactions.add(
+        Transaction(
+          id: item['id'],
+          account: await AccountProvider.fetchAccountById(item['account_id']),
+          type: TransactionType.values[item['type']],
+          amount: item['amount'],
+          date: DateTime.parse(item['date']),
+          description: item['description'],
+        ),
+      );
     }
 
     transactionsSummary = summaryTransactions;
@@ -151,19 +160,24 @@ class TransactionsProvider with ChangeNotifier {
 
   Future<List<Transaction>> fetchTransactions(Account activeAccount) async {
     final dataList = await DBHelper.fetchWhere(
-        'transactions', 'account_id', activeAccount.id);
+      'transactions',
+      'account_id',
+      activeAccount.id,
+    );
 
     List<Transaction> transactions = [];
 
     for (var item in dataList) {
-      transactions.add(Transaction(
-        id: item['id'],
-        account: await AccountProvider.fetchAccountById(item['account_id']),
-        type: TransactionType.values[item['type']],
-        amount: item['amount'],
-        date: DateTime.parse(item['date']),
-        description: item['description'],
-      ));
+      transactions.add(
+        Transaction(
+          id: item['id'],
+          account: await AccountProvider.fetchAccountById(item['account_id']),
+          type: TransactionType.values[item['type']],
+          amount: item['amount'],
+          date: DateTime.parse(item['date']),
+          description: item['description'],
+        ),
+      );
     }
 
     return transactions;
@@ -177,14 +191,12 @@ class TransactionsProvider with ChangeNotifier {
       int weekYear = Jiffy.parseFromDateTime(transaction.date).weekOfYear;
       int year = Jiffy.parseFromDateTime(transaction.date).year;
       String key = "$year-$weekYear";
-      int positiveNegative =
-          transaction.type == TransactionType.deposit ? 1 : -1;
+      int positiveNegative = transaction.type == TransactionType.deposit
+          ? 1
+          : -1;
 
       if (!groupedTransactions.containsKey(key)) {
-        groupedTransactions[key] = {
-          'sumAmount': 0,
-          'transactions': [],
-        };
+        groupedTransactions[key] = {'sumAmount': 0, 'transactions': []};
       }
 
       groupedTransactions[key]['sumAmount'] +=
@@ -197,7 +209,8 @@ class TransactionsProvider with ChangeNotifier {
   }
 
   Future<List<Map<String, dynamic>>> expensesDataChart(
-      Account activeAccount) async {
+    Account activeAccount,
+  ) async {
     await groupByWeekYear(activeAccount);
     Map<String, dynamic> groupedTransactions = transactionsByWeekYear;
     List<Map<String, dynamic>> expensesData = [];
@@ -223,16 +236,20 @@ class TransactionsProvider with ChangeNotifier {
         }
       }
 
-      expensesData.add(
-        {'deposit': deposit, 'spent': spent, 'weekYear': weekYear - actual},
-      );
+      expensesData.add({
+        'deposit': deposit,
+        'spent': spent,
+        'weekYear': weekYear - actual,
+      });
     }
 
     return expensesData;
   }
 
   Future<Map<Categories, double>?> expensesCategoryDataChart(
-      Account activeAccount, DateTimeRange? dateRange) async {
+    Account activeAccount,
+    DateTimeRange? dateRange,
+  ) async {
     await groupByWeekYear(activeAccount);
     Map<String, dynamic> groupedTransactions = transactionsByWeekYear;
     Map<Categories, double> expensesCategoryData = {};
@@ -262,8 +279,8 @@ class TransactionsProvider with ChangeNotifier {
           continue;
         }
 
-        for (Transaction transaction in groupedTransactions[key]
-            ['transactions']) {
+        for (Transaction transaction
+            in groupedTransactions[key]['transactions']) {
           if (transaction.category != null) {
             max += transaction.amount;
             expensesCategoryData[transaction.category!] = transaction.amount;
