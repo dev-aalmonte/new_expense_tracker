@@ -9,13 +9,11 @@ class AccountProvider with ChangeNotifier {
     return [..._accounts];
   }
 
-  Account? _activeAccount;
-  Account? get activeAccount {
-    return _activeAccount;
-  }
+  Account? activeAccount;
 
-  set activeAccount(Account? account) {
-    _activeAccount = account;
+  void setActiveAccount(Account account) {
+    activeAccount = account;
+    notifyListeners();
   }
 
   Future<void> fetchAccount() async {
@@ -37,13 +35,15 @@ class AccountProvider with ChangeNotifier {
   static Future<Account> fetchAccountById(int accountId) async {
     final data = await DBHelper.fetchWhere("accounts", "id", accountId);
     Account returnAccount = data
-        .map((item) => Account(
-              id: item['id'],
-              name: item['name'],
-              accNumber: item['acc_number'],
-              available: item['available'],
-              spent: item['spent'],
-            ))
+        .map(
+          (item) => Account(
+            id: item['id'],
+            name: item['name'],
+            accNumber: item['acc_number'],
+            available: item['available'],
+            spent: item['spent'],
+          ),
+        )
         .toList()[0];
     return returnAccount;
   }
@@ -53,7 +53,7 @@ class AccountProvider with ChangeNotifier {
       "name": account.name,
       "acc_number": account.accNumber,
       "available": account.available,
-      "spent": account.spent
+      "spent": account.spent,
     };
 
     account.id = await DBHelper.insert('accounts', accountObject);
@@ -68,7 +68,7 @@ class AccountProvider with ChangeNotifier {
       "name": account.name,
       "acc_number": account.accNumber,
       "available": account.available,
-      "spent": account.spent
+      "spent": account.spent,
     };
 
     await DBHelper.update(

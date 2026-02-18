@@ -11,7 +11,7 @@ import 'package:jiffy/jiffy.dart';
 class TransactionsProvider with ChangeNotifier {
   double max = 0.00;
   bool isDataLoaded = false;
-  bool isMonthly = false;
+  bool isMonthly = true;
 
   List<Transaction> transactionsSummary = [];
   Map<String, dynamic> transactionsByWeekYear = {};

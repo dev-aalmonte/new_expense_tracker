@@ -1,4 +1,3 @@
-import 'package:new_expense_tracker/models/account.dart';
 import 'package:new_expense_tracker/models/transaction.dart';
 import 'package:new_expense_tracker/providers/account_provider.dart';
 import 'package:new_expense_tracker/providers/transactions_provider.dart';
@@ -18,8 +17,6 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  bool isMonthly = true;
-
   @override
   Widget build(BuildContext context) {
     AccountProvider accountProvider = Provider.of<AccountProvider>(
@@ -28,8 +25,6 @@ class _HomePageState extends State<HomePage> {
     );
     TransactionsProvider transactionsProvider =
         Provider.of<TransactionsProvider>(context, listen: true);
-    // Account activeAccount = accountProvider.activeAccount!;
-    // List<Account> accounts = accountProvider.accounts;
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
@@ -89,14 +84,14 @@ class _HomePageState extends State<HomePage> {
                           horizontal: -4,
                         ),
                       ),
-                      selected: {isMonthly},
+                      selected: {transactionsProvider.isMonthly},
                       onSelectionChanged: (newSelection) async {
                         transactionsProvider.isMonthly = newSelection.first;
                         transactionsProvider.fetchTransactionSummary(
                           accountProvider.activeAccount!,
                         );
                         setState(() {
-                          isMonthly = newSelection.first;
+                          transactionsProvider.isMonthly = newSelection.first;
                         });
                       },
                       segments: const [
