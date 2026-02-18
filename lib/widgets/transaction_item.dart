@@ -42,28 +42,39 @@ class _TransactionItemState extends State<TransactionItem> {
 
     return Column(
       children: [
-        InkWell(
-          onTap: () {
-            setState(() {
-              _expanded = !_expanded;
-            });
-          },
-          child: ListTile(
-            leading: CircleAvatar(
-              radius: 25,
-              child: Text(DateFormat('y').format(transactions[0].date)),
-            ),
-            title: Text("$firstDayOfWeek - $lastDayOfWeek"),
-            subtitle: Text(
-              "Week: ${Jiffy.parseFromDateTime(transactions[0].date).weekOfYear}",
-            ),
-            trailing: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text("\$${sumAmount.toStringAsFixed(2)}"),
-                const SizedBox(width: 24),
-                const Icon(Icons.keyboard_arrow_down),
-              ],
+        Card(
+          color: _expanded
+              ? Theme.of(context).colorScheme.surfaceContainerHigh
+              : Colors.transparent,
+          elevation: 0,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(12),
+            onTap: () {
+              setState(() {
+                _expanded = !_expanded;
+              });
+            },
+            child: ListTile(
+              leading: CircleAvatar(
+                radius: 25,
+                child: Text(DateFormat('y').format(transactions[0].date)),
+              ),
+              title: Text("$firstDayOfWeek - $lastDayOfWeek"),
+              subtitle: Text(
+                "Week: ${Jiffy.parseFromDateTime(transactions[0].date).weekOfYear}",
+              ),
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text("\$${sumAmount.toStringAsFixed(2)}"),
+                  const SizedBox(width: 24),
+                  Icon(
+                    _expanded
+                        ? Icons.keyboard_arrow_up
+                        : Icons.keyboard_arrow_down,
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -74,14 +85,20 @@ class _TransactionItemState extends State<TransactionItem> {
             minHeight: _expanded ? 70 : 0,
             maxHeight: _expanded ? min(74.0 * transactions.length, 74 * 3) : 0,
           ),
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-          child: ListView.builder(
-            itemCount: transactions.length,
-            itemBuilder: (context, index) => TransactionTile(
-              transactionType: transactions[index].type,
-              category: transactions[index].category,
-              amount: transactions[index].amount,
-              date: transactions[index].date,
+          padding: const EdgeInsets.only(left: 16, right: 16, bottom: 8),
+          child: Scrollbar(
+            thumbVisibility: true,
+            trackVisibility: true,
+            radius: const Radius.circular(20),
+            child: ListView.builder(
+              itemCount: transactions.length,
+              itemBuilder: (context, index) => TransactionTile(
+                transactionType: transactions[index].type,
+                category: transactions[index].category,
+                amount: transactions[index].amount,
+                date: transactions[index].date,
+                isLastItem: index == transactions.length - 1,
+              ),
             ),
           ),
         ),

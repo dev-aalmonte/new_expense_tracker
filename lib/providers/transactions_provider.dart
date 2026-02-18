@@ -138,7 +138,7 @@ class TransactionsProvider with ChangeNotifier {
       );
     }
 
-    transactionsSummary = summaryTransactions;
+    transactionsSummary = summaryTransactions.reversed.toList();
     _fetchTransactionSummaryChartData();
     notifyListeners();
   }
