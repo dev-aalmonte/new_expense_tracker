@@ -176,7 +176,7 @@ class AccountCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  available.toStringAsFixed(2),
+                  '\$${available.toStringAsFixed(2)}',
                   style: Theme.of(
                     context,
                   ).textTheme.displaySmall!.copyWith(color: Colors.green),
@@ -185,7 +185,7 @@ class AccountCard extends StatelessWidget {
                 Text("Spent", style: Theme.of(context).textTheme.titleLarge),
                 const SizedBox(height: 8),
                 Text(
-                  spent.toStringAsFixed(2),
+                  '\$${spent.toStringAsFixed(2)}',
                   style: Theme.of(context).textTheme.displaySmall!.copyWith(
                     color: Colors.red.shade300,
                   ),
