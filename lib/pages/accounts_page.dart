@@ -1,8 +1,10 @@
 import 'package:new_expense_tracker/models/account.dart';
+import 'package:new_expense_tracker/models/transaction.dart';
 import 'package:new_expense_tracker/pages/add_account_page.dart';
 import 'package:new_expense_tracker/pages/tabs_page.dart';
 import 'package:new_expense_tracker/providers/account_provider.dart';
 import 'package:flutter/material.dart';
+import 'package:new_expense_tracker/providers/transactions_provider.dart';
 import 'package:provider/provider.dart';
 
 class AccountPage extends StatefulWidget {
@@ -88,17 +90,36 @@ class NewAccountCard extends StatelessWidget {
 }
 
 class AccountCard extends StatelessWidget {
-  final Account account;
   const AccountCard({super.key, required this.account});
+
+  final Account account;
 
   @override
   Widget build(BuildContext context) {
+    final AccountProvider accountProvider = Provider.of<AccountProvider>(
+      context,
+    );
+    final TransactionsProvider transactionsProvider =
+        Provider.of<TransactionsProvider>(context);
+
+    if (transactionsProvider.transactionsSummary.isEmpty) {
+      transactionsProvider.fetchTransactionSummary(account);
+    }
+
+    final double spent = transactionsProvider.transactionsSummary
+        .where((transaction) => transaction.type == TransactionType.spent)
+        .fold(0.0, (sum, transaction) => sum + transaction.amount);
+    final double available =
+        transactionsProvider.transactionsSummary
+            .where((transaction) => transaction.type == TransactionType.deposit)
+            .fold(0.0, (sum, transaction) => sum + transaction.amount) -
+        spent;
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: GestureDetector(
         onTap: () {
-          Provider.of<AccountProvider>(context, listen: false).activeAccount =
-              account;
+          accountProvider.activeAccount = account;
           Navigator.of(context).pushNamed(TabsPage.route);
         },
         child: Card(
@@ -155,7 +176,7 @@ class AccountCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  account.available.toStringAsFixed(2),
+                  available.toStringAsFixed(2),
                   style: Theme.of(
                     context,
                   ).textTheme.displaySmall!.copyWith(color: Colors.green),
@@ -164,7 +185,7 @@ class AccountCard extends StatelessWidget {
                 Text("Spent", style: Theme.of(context).textTheme.titleLarge),
                 const SizedBox(height: 8),
                 Text(
-                  account.spent.toStringAsFixed(2),
+                  spent.toStringAsFixed(2),
                   style: Theme.of(context).textTheme.displaySmall!.copyWith(
                     color: Colors.red.shade300,
                   ),

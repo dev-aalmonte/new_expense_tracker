@@ -51,40 +51,11 @@ class TransactionsProvider with ChangeNotifier {
 
     transaction.id = await DBHelper.insert('transactions', transactionObject);
 
-    // Update the account balance based on the transaction type
-    _setDepositPreference(transaction, activeAccount);
-
     // Refresh the transaction summary and chart data
     fetchTransactionSummary(activeAccount);
     groupByWeekYear(activeAccount);
 
     notifyListeners();
-  }
-
-  void _setDepositPreference(
-    Transaction transaction,
-    Account activeAccount,
-  ) async {
-    late Account updatedAccount;
-    if (transaction.type == TransactionType.deposit) {
-      updatedAccount = Account(
-        id: activeAccount.id,
-        name: activeAccount.name,
-        accNumber: activeAccount.accNumber,
-        available: activeAccount.available + transaction.amount,
-        spent: activeAccount.spent,
-      );
-    } else {
-      updatedAccount = Account(
-        id: activeAccount.id,
-        name: activeAccount.name,
-        accNumber: activeAccount.accNumber,
-        available: activeAccount.available,
-        spent: activeAccount.spent + transaction.amount,
-      );
-    }
-
-    AccountProvider.updateAccount(updatedAccount);
   }
 
   Future<void> fetchTransactionSummary(Account activeAccount) async {
