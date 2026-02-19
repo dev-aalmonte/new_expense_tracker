@@ -111,9 +111,9 @@ class _TabsPageState extends State<TabsPage> {
               ),
               const Padding(
                 padding: EdgeInsets.symmetric(horizontal: 16),
-                child: NotFoundPage(),
                 // TODO: Update chart page to solve crash issues
-                // child: ChartPage(),
+                // child: NotFoundPage(),
+                child: ChartPage(),
               ),
             ],
           ),

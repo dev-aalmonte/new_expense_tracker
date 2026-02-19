@@ -87,7 +87,6 @@ class TransactionsProvider with ChangeNotifier {
     AccountProvider.updateAccount(updatedAccount);
   }
 
-  // Transaction Summary
   Future<void> fetchTransactionSummary(Account activeAccount) async {
     List range = [];
     if (!isMonthly) {
@@ -175,6 +174,9 @@ class TransactionsProvider with ChangeNotifier {
           type: TransactionType.values[item['type']],
           amount: item['amount'],
           date: DateTime.parse(item['date']),
+          category: item['category'] != null
+              ? Categories.values[item['category']]
+              : null,
           description: item['description'],
         ),
       );
@@ -210,6 +212,7 @@ class TransactionsProvider with ChangeNotifier {
 
   Future<List<Map<String, dynamic>>> expensesDataChart(
     Account activeAccount,
+    DateTimeRange? dateRange,
   ) async {
     await groupByWeekYear(activeAccount);
     Map<String, dynamic> groupedTransactions = transactionsByWeekYear;

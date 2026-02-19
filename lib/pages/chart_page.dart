@@ -1,4 +1,6 @@
+import 'package:new_expense_tracker/models/account.dart';
 import 'package:new_expense_tracker/models/transaction.dart';
+import 'package:new_expense_tracker/providers/account_provider.dart';
 import 'package:new_expense_tracker/providers/chart_provider.dart';
 import 'package:new_expense_tracker/providers/transactions_provider.dart';
 import 'package:fl_chart/fl_chart.dart';
@@ -20,18 +22,13 @@ class _ChartPageState extends State<ChartPage> {
   Map<Categories, double>? expensesCategoryData;
   double? maxValue;
 
-  @override
-  void initState() {
-    super.initState();
-    Provider.of<ChartProvider>(context, listen: false).fetchExpensesChart();
-  }
-
   void _selectDateRange() async {
     final newDateRange = await showDateRangePicker(
-        context: context,
-        initialDateRange: dateRange,
-        firstDate: DateTime(2022),
-        lastDate: DateTime.now());
+      context: context,
+      initialDateRange: dateRange,
+      firstDate: DateTime(2022),
+      lastDate: DateTime.now(),
+    );
 
     setState(() {
       dateRange = newDateRange ?? dateRange;
@@ -71,6 +68,25 @@ class _ChartPageState extends State<ChartPage> {
 
   @override
   Widget build(BuildContext context) {
+    final ChartProvider chartProvider = Provider.of<ChartProvider>(
+      context,
+      listen: false,
+    );
+    final TransactionsProvider transactionsProvider =
+        Provider.of<TransactionsProvider>(context, listen: false);
+    final AccountProvider accountProvider = Provider.of<AccountProvider>(
+      context,
+      listen: false,
+    );
+
+    final Account activeAccount = accountProvider.activeAccount!;
+
+    transactionsProvider.expensesDataChart(activeAccount, dateRange).then((
+      data,
+    ) {
+      chartProvider.fetchExpensesChart(data);
+    });
+
     // List<PieChartSectionData> categoryChartData =
     //     getExpensesPerCategoryChartData(context);
 
@@ -82,10 +98,7 @@ class _ChartPageState extends State<ChartPage> {
       children: [
         Padding(
           padding: const EdgeInsets.only(top: 16, bottom: 12),
-          child: Text(
-            "Charts",
-            style: Theme.of(context).textTheme.titleLarge,
-          ),
+          child: Text("Charts", style: Theme.of(context).textTheme.titleLarge),
         ),
         Card(
           child: Padding(
@@ -95,18 +108,16 @@ class _ChartPageState extends State<ChartPage> {
               children: [
                 Text(
                   "Date Range",
-                  style: Theme.of(context)
-                      .textTheme
-                      .titleMedium!
-                      .copyWith(fontWeight: FontWeight.bold),
+                  style: Theme.of(context).textTheme.titleMedium!.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
-                const SizedBox(
-                  width: 32,
-                ),
+                const SizedBox(width: 32),
                 TextButton(
                   onPressed: _selectDateRange,
                   child: Text(
-                      "${startDate.month}-${startDate.day}-${startDate.year} to ${endDate.month}-${endDate.day}-${endDate.year}"),
+                    "${startDate.month}-${startDate.day}-${startDate.year} to ${endDate.month}-${endDate.day}-${endDate.year}",
+                  ),
                 ),
               ],
             ),
@@ -134,11 +145,14 @@ class _ChartPageState extends State<ChartPage> {
                   height: 200,
                   child: BarChart(
                     BarChartData(
-                        maxY: Provider.of<ChartProvider>(context)
-                                .maxBarChartValue +
-                            50,
-                        barGroups:
-                            Provider.of<ChartProvider>(context).expensesChart),
+                      maxY:
+                          Provider.of<ChartProvider>(context).maxBarChartValue +
+                          Provider.of<ChartProvider>(context).maxBarChartValue *
+                              0.2,
+                      barGroups: Provider.of<ChartProvider>(
+                        context,
+                      ).expensesChart,
+                    ),
                   ),
                 ),
               ],
@@ -166,21 +180,16 @@ class _ChartPageState extends State<ChartPage> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        const Icon(
-                          Icons.warning_amber_rounded,
-                          size: 42,
-                        ),
-                        const SizedBox(
-                          height: 12,
-                        ),
+                        const Icon(Icons.warning_amber_rounded, size: 42),
+                        const SizedBox(height: 12),
                         Text(
                           "No data available",
                           textAlign: TextAlign.center,
                           style: Theme.of(context).textTheme.titleMedium,
-                        )
+                        ),
                       ],
                     ),
-                  )
+                  ),
                 // else
                 //   Row(
                 //     children: [
@@ -211,7 +220,7 @@ class _ChartPageState extends State<ChartPage> {
               ],
             ),
           ),
-        )
+        ),
       ],
     );
   }
@@ -235,24 +244,15 @@ class ChartLegend extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
         children: [
-          CircleAvatar(
-            maxRadius: 5,
-            backgroundColor: color,
-          ),
-          const SizedBox(
-            width: 4,
-          ),
+          CircleAvatar(maxRadius: 5, backgroundColor: color),
+          const SizedBox(width: 4),
           Text(
             "$label: ",
-            style: Theme.of(context)
-                .textTheme
-                .labelLarge!
-                .copyWith(fontWeight: FontWeight.bold),
+            style: Theme.of(
+              context,
+            ).textTheme.labelLarge!.copyWith(fontWeight: FontWeight.bold),
           ),
-          Text(
-            value,
-            style: Theme.of(context).textTheme.labelLarge!,
-          ),
+          Text(value, style: Theme.of(context).textTheme.labelLarge!),
         ],
       ),
     );

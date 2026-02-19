@@ -1,7 +1,5 @@
 import 'dart:math';
 
-import 'package:new_expense_tracker/providers/account_provider.dart';
-import 'package:new_expense_tracker/providers/transactions_provider.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 
@@ -18,22 +16,22 @@ class ChartProvider with ChangeNotifier {
     return [..._categoryChart];
   }
 
-  void fetchExpensesChart() async {
-    TransactionsProvider transactionsProvider = TransactionsProvider();
-    AccountProvider accountProvider = AccountProvider();
+  void fetchExpensesChart(List<Map<String, dynamic>> dataChart) async {
     _expensesChart = [];
-    var dataChart = await transactionsProvider
-        .expensesDataChart(accountProvider.activeAccount!);
     for (var data in dataChart) {
-      maxBarChartValue =
-          max(max(data['deposit'], data['spent']), maxBarChartValue);
-      _expensesChart.add(BarChartGroupData(
-        x: data['weekYear'],
-        barRods: [
-          BarChartRodData(toY: data['deposit'], color: Colors.green),
-          BarChartRodData(toY: data['spent'], color: Colors.red),
-        ],
-      ));
+      maxBarChartValue = max(
+        max(data['deposit'], data['spent']),
+        maxBarChartValue,
+      );
+      _expensesChart.add(
+        BarChartGroupData(
+          x: data['weekYear'],
+          barRods: [
+            BarChartRodData(toY: data['deposit'], color: Colors.green),
+            BarChartRodData(toY: data['spent'], color: Colors.red),
+          ],
+        ),
+      );
     }
     notifyListeners();
   }
