@@ -17,12 +17,17 @@ class AccountPage extends StatefulWidget {
 }
 
 class _AccountPageState extends State<AccountPage> {
-  PageController accountPagesController = PageController();
+  late PageController accountPagesController;
 
   @override
   void initState() {
+    accountPagesController = PageController();
+    final accountProvider = Provider.of<AccountProvider>(
+      context,
+      listen: false,
+    );
+    accountProvider.fetchAccounts();
     super.initState();
-    Provider.of<AccountProvider>(context, listen: false).fetchAccount();
   }
 
   @override
@@ -30,15 +35,22 @@ class _AccountPageState extends State<AccountPage> {
     return Scaffold(
       body: Padding(
         padding: const EdgeInsets.symmetric(vertical: 40),
-        child: PageView(
-          controller: accountPagesController,
-          clipBehavior: Clip.antiAlias,
-          children: [
-            ...Provider.of<AccountProvider>(
-              context,
-            ).accounts.map((account) => AccountCard(account: account)).toList(),
-            const NewAccountCard(),
-          ],
+        child: Consumer<AccountProvider>(
+          builder: (context, accountProvider, _) {
+            return PageView(
+              controller: accountPagesController,
+              clipBehavior: Clip.antiAlias,
+              children: [
+                ...accountProvider.accounts.map(
+                  (account) => AccountCard(
+                    accountProvider: accountProvider,
+                    currentAccount: account,
+                  ),
+                ),
+                const NewAccountCard(),
+              ],
+            );
+          },
         ),
       ),
     );
@@ -90,20 +102,22 @@ class NewAccountCard extends StatelessWidget {
 }
 
 class AccountCard extends StatelessWidget {
-  const AccountCard({super.key, required this.account});
+  const AccountCard({
+    super.key,
+    required this.accountProvider,
+    required this.currentAccount,
+  });
 
-  final Account account;
+  final AccountProvider accountProvider;
+  final Account currentAccount;
 
   @override
   Widget build(BuildContext context) {
-    final AccountProvider accountProvider = Provider.of<AccountProvider>(
-      context,
-    );
     final TransactionsProvider transactionsProvider =
-        Provider.of<TransactionsProvider>(context);
+        Provider.of<TransactionsProvider>(context, listen: true);
 
     if (transactionsProvider.transactionsSummary.isEmpty) {
-      transactionsProvider.fetchTransactionSummary(account);
+      transactionsProvider.fetchTransactionSummary(currentAccount);
     }
 
     final double spent = transactionsProvider.transactionsSummary
@@ -119,7 +133,7 @@ class AccountCard extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: GestureDetector(
         onTap: () {
-          accountProvider.activeAccount = account;
+          accountProvider.activeAccount = currentAccount;
           Navigator.of(context).pushNamed(TabsPage.route);
         },
         child: Card(
@@ -158,13 +172,13 @@ class AccountCard extends StatelessWidget {
                       Positioned(
                         top: 84,
                         child: Text(
-                          account.name,
+                          currentAccount.name,
                           style: Theme.of(context).textTheme.displaySmall,
                         ),
                       ),
                       Positioned(
                         top: 136,
-                        child: Text("Acc #: ${account.accNumber}"),
+                        child: Text("Acc #: ${currentAccount.accNumber}"),
                       ),
                     ],
                   ),

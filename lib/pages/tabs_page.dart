@@ -1,7 +1,6 @@
 import 'package:new_expense_tracker/models/account.dart';
 import 'package:new_expense_tracker/pages/add_transaction_page.dart';
 import 'package:new_expense_tracker/pages/chart_page.dart';
-import 'package:new_expense_tracker/pages/debug/not_found_page.dart';
 import 'package:new_expense_tracker/pages/home_page.dart';
 import 'package:new_expense_tracker/pages/transactions_page.dart';
 import 'package:new_expense_tracker/providers/account_provider.dart';
@@ -22,34 +21,25 @@ class _TabsPageState extends State<TabsPage> {
   int _selectedIndex = 1;
   late PageController _pageController;
 
-  late Account activeAccount;
-
   @override
   void initState() {
-    super.initState();
     _pageController = PageController(initialPage: _selectedIndex);
-  }
 
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    activeAccount = Provider.of<AccountProvider>(context).activeAccount!;
-    if (!Provider.of<TransactionsProvider>(context).isDataLoaded) {
-      Future.wait([
-        Provider.of<TransactionsProvider>(
-          context,
-          listen: false,
-        ).fetchTransactionSummary(activeAccount),
-        Provider.of<TransactionsProvider>(
-          context,
-          listen: false,
-        ).groupByWeekYear(activeAccount),
-      ]).then((_) {
-        Provider.of<TransactionsProvider>(context, listen: false).isDataLoaded =
-            true;
-        setState(() {});
-      });
-    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final TransactionsProvider transactionsProvider =
+          Provider.of<TransactionsProvider>(context, listen: false);
+
+      final Account activeAccount = Provider.of<AccountProvider>(
+        context,
+        listen: false,
+      ).activeAccount!;
+
+      transactionsProvider.fetchTransactions(activeAccount);
+      transactionsProvider.fetchTransactionSummary(activeAccount);
+      transactionsProvider.groupByWeekYear(activeAccount);
+    });
+
+    super.initState();
   }
 
   @override
@@ -71,73 +61,66 @@ class _TabsPageState extends State<TabsPage> {
 
   @override
   Widget build(BuildContext context) {
-    TransactionsProvider transactionsProvider =
-        Provider.of<TransactionsProvider>(context);
-
-    if (!transactionsProvider.isDataLoaded) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
-    }
-
-    return PopScope(
-      onPopInvokedWithResult: (bool didPop, dynamic _) async {
-        Provider.of<TransactionsProvider>(context, listen: false).resetData();
-      },
-      child: Scaffold(
-        body: Padding(
-          padding: const EdgeInsets.only(top: 28),
-          child: PageView(
-            controller: _pageController,
-            onPageChanged: (value) {
-              setState(() {
-                _selectedIndex = value;
-              });
+    return Consumer<TransactionsProvider>(
+      builder: (context, transactionsProvider, _) => PopScope(
+        onPopInvokedWithResult: (bool didPop, dynamic _) async {
+          transactionsProvider.resetData();
+        },
+        child: Scaffold(
+          body: Padding(
+            padding: const EdgeInsets.only(top: 28),
+            child: PageView(
+              controller: _pageController,
+              onPageChanged: (value) {
+                setState(() {
+                  _selectedIndex = value;
+                });
+              },
+              children: [
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: TransactionsPage(
+                    transactionsHistory:
+                        transactionsProvider.transactionsByWeekYear,
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: HomePage(
+                    transactionsSummary:
+                        transactionsProvider.transactionsSummary,
+                  ),
+                ),
+                const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 16),
+                  // TODO: Update chart page to solve crash issues
+                  // child: NotFoundPage(),
+                  child: ChartPage(),
+                ),
+              ],
+            ),
+          ),
+          floatingActionButton: FloatingActionButton(
+            onPressed: () {
+              Navigator.pushNamed(context, AddTransactionPage.route);
             },
-            children: [
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: TransactionsPage(
-                  transactionsHistory: Provider.of<TransactionsProvider>(
-                    context,
-                  ).transactionsByWeekYear,
-                ),
+            child: const Icon(Icons.add),
+          ),
+          bottomNavigationBar: BottomNavigationBar(
+            currentIndex: _selectedIndex,
+            onTap: _selectPage,
+            items: const [
+              BottomNavigationBarItem(
+                icon: Icon(Icons.compare_arrows),
+                label: "Transactions",
               ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: HomePage(
-                  transactionsSummary: Provider.of<TransactionsProvider>(
-                    context,
-                  ).transactionsSummary,
-                ),
-              ),
-              const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16),
-                // TODO: Update chart page to solve crash issues
-                // child: NotFoundPage(),
-                child: ChartPage(),
+              BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.pie_chart),
+                label: "Charts",
               ),
             ],
           ),
-        ),
-        floatingActionButton: FloatingActionButton(
-          onPressed: () {
-            Navigator.pushNamed(context, AddTransactionPage.route);
-          },
-          child: const Icon(Icons.add),
-        ),
-        bottomNavigationBar: BottomNavigationBar(
-          currentIndex: _selectedIndex,
-          onTap: _selectPage,
-          items: const [
-            BottomNavigationBarItem(
-              icon: Icon(Icons.compare_arrows),
-              label: "Transactions",
-            ),
-            BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.pie_chart),
-              label: "Charts",
-            ),
-          ],
         ),
       ),
     );

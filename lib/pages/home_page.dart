@@ -52,13 +52,6 @@ class _HomePageState extends State<HomePage> {
                   onSelected: (value) {
                     accountProvider.activeAccount = value;
                     transactionsProvider.resetData();
-                    Future.wait([
-                      transactionsProvider.fetchTransactionSummary(value!),
-                      transactionsProvider.groupByWeekYear(value),
-                    ]).then((_) {
-                      transactionsProvider.isDataLoaded = true;
-                      setState(() {});
-                    });
                   },
                   dropdownMenuEntries: accountProvider.accounts
                       .map(

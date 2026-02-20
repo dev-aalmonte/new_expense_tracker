@@ -1,5 +1,7 @@
 import 'dart:async';
+import 'dart:math';
 
+import 'package:fl_chart/fl_chart.dart';
 import 'package:new_expense_tracker/helpers/db_helper.dart';
 import 'package:new_expense_tracker/models/account.dart';
 import 'package:new_expense_tracker/models/db_where.dart';
@@ -9,13 +11,20 @@ import 'package:flutter/material.dart';
 import 'package:jiffy/jiffy.dart';
 
 class TransactionsProvider with ChangeNotifier {
-  double max = 0.00;
+  double maxValue = 0.00;
   bool isDataLoaded = false;
   bool isMonthly = true;
 
+  List<Transaction> transactions = [];
   List<Transaction> transactionsSummary = [];
   Map<String, dynamic> transactionsByWeekYear = {};
+
+  // Chart Data
   Map<String, double> transactionSummaryChartData = {};
+  Map<String, dynamic> transactionChartDataByWeekYear = {};
+  List<BarChartGroupData> expensesChartData = [];
+  Map<Categories, double> expensesCategoryChartData = {};
+  List<PieChartSectionData> categoryChartData = [];
 
   Future<void> deleteData() async {
     await DBHelper.clearData();
@@ -23,7 +32,7 @@ class TransactionsProvider with ChangeNotifier {
   }
 
   void resetData() {
-    max = 0.00;
+    maxValue = 0.00;
     isDataLoaded = false;
     isMonthly = false;
 
@@ -55,6 +64,35 @@ class TransactionsProvider with ChangeNotifier {
     fetchTransactionSummary(activeAccount);
     groupByWeekYear(activeAccount);
 
+    notifyListeners();
+  }
+
+  Future<void> fetchTransactions(Account activeAccount) async {
+    final dataList = await DBHelper.fetchWhere(
+      'transactions',
+      'account_id',
+      activeAccount.id,
+    );
+
+    List<Transaction> transactions = [];
+
+    for (var item in dataList) {
+      transactions.add(
+        Transaction(
+          id: item['id'],
+          account: await AccountProvider.fetchAccountById(item['account_id']),
+          type: TransactionType.values[item['type']],
+          amount: item['amount'],
+          date: DateTime.parse(item['date']),
+          category: item['category'] != null
+              ? Categories.values[item['category']]
+              : null,
+          description: item['description'],
+        ),
+      );
+    }
+
+    this.transactions = transactions.reversed.toList();
     notifyListeners();
   }
 
@@ -128,36 +166,7 @@ class TransactionsProvider with ChangeNotifier {
     }
   }
 
-  Future<List<Transaction>> fetchTransactions(Account activeAccount) async {
-    final dataList = await DBHelper.fetchWhere(
-      'transactions',
-      'account_id',
-      activeAccount.id,
-    );
-
-    List<Transaction> transactions = [];
-
-    for (var item in dataList) {
-      transactions.add(
-        Transaction(
-          id: item['id'],
-          account: await AccountProvider.fetchAccountById(item['account_id']),
-          type: TransactionType.values[item['type']],
-          amount: item['amount'],
-          date: DateTime.parse(item['date']),
-          category: item['category'] != null
-              ? Categories.values[item['category']]
-              : null,
-          description: item['description'],
-        ),
-      );
-    }
-
-    return transactions;
-  }
-
   Future<void> groupByWeekYear(Account activeAccount) async {
-    List<Transaction> transactions = await fetchTransactions(activeAccount);
     Map<String, dynamic> groupedTransactions = {};
 
     for (var transaction in transactions) {
@@ -181,11 +190,10 @@ class TransactionsProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  Future<List<Map<String, dynamic>>> expensesDataChart(
+  Future<void> expensesDataChart(
     Account activeAccount,
     DateTimeRange? dateRange,
   ) async {
-    await groupByWeekYear(activeAccount);
     Map<String, dynamic> groupedTransactions = transactionsByWeekYear;
     List<Map<String, dynamic>> expensesData = [];
     int weekYear = Jiffy.parseFromDateTime(DateTime.now()).weekOfYear;
@@ -217,10 +225,57 @@ class TransactionsProvider with ChangeNotifier {
       });
     }
 
-    return expensesData;
+    transactionSummaryChartData = {
+      "deposit": expensesData.fold(0, (sum, data) => sum + data['deposit']),
+      "spent": expensesData.fold(0, (sum, data) => sum + data['spent']),
+    };
+
+    transactionChartDataByWeekYear = {
+      for (var data in expensesData)
+        "${data['weekYear']}": {
+          "deposit": data['deposit'],
+          "spent": data['spent'],
+        },
+    };
   }
 
-  Future<Map<Categories, double>?> expensesCategoryDataChart(
+  void fetchExpensesChart() async {
+    expensesChartData = [];
+    List<int> weekYears = [];
+
+    for (var entry in transactionChartDataByWeekYear.entries) {
+      int weekYear = int.parse(entry.key);
+      var data = entry.value;
+      weekYears.add(weekYear);
+
+      expensesChartData.add(
+        BarChartGroupData(
+          x: weekYear,
+          barRods: [
+            BarChartRodData(
+              toY: (data['deposit'] as num).toDouble(),
+              color: Colors.green,
+            ),
+            BarChartRodData(
+              toY: (data['spent'] as num).toDouble(),
+              color: Colors.red,
+            ),
+          ],
+        ),
+      );
+    }
+    notifyListeners();
+  }
+
+  double getExpensesChartMaxValue() {
+    double maxValue = 0;
+    for (var data in transactionChartDataByWeekYear.values) {
+      maxValue = max(max(data['deposit'], data['spent']), maxValue);
+    }
+    return maxValue;
+  }
+
+  Future<void> expensesCategoryDataChart(
     Account activeAccount,
     DateTimeRange? dateRange,
   ) async {
@@ -232,7 +287,7 @@ class TransactionsProvider with ChangeNotifier {
     late int startYear;
     late int endYear;
 
-    max = 0;
+    maxValue = 0;
 
     if (dateRange != null) {
       startWeekYear = Jiffy.parseFromDateTime(dateRange.start).weekOfYear;
@@ -256,13 +311,32 @@ class TransactionsProvider with ChangeNotifier {
         for (Transaction transaction
             in groupedTransactions[key]['transactions']) {
           if (transaction.category != null) {
-            max += transaction.amount;
+            maxValue += transaction.amount;
             expensesCategoryData[transaction.category!] = transaction.amount;
           }
         }
       }
     }
 
-    return expensesCategoryData.isEmpty ? null : expensesCategoryData;
+    expensesCategoryChartData = expensesCategoryData;
+  }
+
+  void fetchCategoryChart() {
+    categoryChartData = [];
+    if (expensesCategoryChartData.isNotEmpty) {
+      expensesCategoryChartData.forEach((key, value) {
+        // double percentage = (value / max) * 100;
+        categoryChartData.add(
+          PieChartSectionData(
+            // radius: 50,
+            value: value,
+            color: Categories.categoryColors(key),
+            showTitle: false,
+            // title: "${percentage.toStringAsFixed(2)}%",
+          ),
+        );
+      });
+    }
+    // notifyListeners();
   }
 }

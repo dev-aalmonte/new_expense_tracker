@@ -2,6 +2,7 @@ import 'dart:math';
 
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import 'package:new_expense_tracker/models/transaction.dart';
 
 class ChartProvider with ChangeNotifier {
   double maxBarChartValue = 0;
@@ -36,23 +37,24 @@ class ChartProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  // void fetchCategoryChart() {
-  //   TransactionsProvider transactionsProvider = TransactionsProvider();
-  //   double max = transactionsProvider.max;
-  //   Map<Categories, double>? expensesCategoryData =
-  //       transactionsProvider.expensesCategoryDataChart(null);
-
-  //   if (expensesCategoryData != null) {
-  //     expensesCategoryData.forEach((key, value) {
-  //       double percentage = (value / max) * 100;
-  //       _categoryChart.add(PieChartSectionData(
-  //         radius: 50,
-  //         value: value,
-  //         color: Categories.categoryColors(key),
-  //         title: "${percentage.toStringAsFixed(2)}%",
-  //       ));
-  //     });
-  //   }
-  //   notifyListeners();
-  // }
+  void fetchCategoryChart(
+    Map<Categories, double>? expensesCategoryData,
+    double max,
+  ) {
+    if (expensesCategoryData != null) {
+      expensesCategoryData.forEach((key, value) {
+        // double percentage = (value / max) * 100;
+        _categoryChart.add(
+          PieChartSectionData(
+            // radius: 50,
+            value: value,
+            color: Categories.categoryColors(key),
+            showTitle: false,
+            // title: "${percentage.toStringAsFixed(2)}%",
+          ),
+        );
+      });
+    }
+    notifyListeners();
+  }
 }

@@ -16,7 +16,7 @@ class AccountProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> fetchAccount() async {
+  Future<void> fetchAccounts() async {
     final dataList = await DBHelper.getData('accounts');
     _accounts = dataList
         .map(
