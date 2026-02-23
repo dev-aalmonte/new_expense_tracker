@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:fl_chart/fl_chart.dart';
+import 'package:new_expense_tracker/helpers/date_helper.dart';
 import 'package:new_expense_tracker/helpers/db_helper.dart';
 import 'package:new_expense_tracker/models/account.dart';
 import 'package:new_expense_tracker/models/db_where.dart';
@@ -45,7 +46,7 @@ class TransactionsProvider with ChangeNotifier {
     Transaction transaction,
     Account activeAccount,
   ) async {
-    // Add transaction to the database
+    // Create a transaction object to insert into the database
     var transactionObject = {
       "type": transaction.type.index,
       "amount": transaction.amount,
@@ -54,27 +55,50 @@ class TransactionsProvider with ChangeNotifier {
       "description": transaction.description,
     };
 
+    // If the transaction is an expense, include the category
     if (transaction.type == TransactionType.spent) {
       transactionObject['category'] = transaction.category!.index;
     }
 
+    // Add transaction to the database
     transaction.id = await DBHelper.insert('transactions', transactionObject);
 
     // Refresh the transaction summary and chart data
     fetchTransactionSummary(activeAccount);
-    groupByWeekYear(activeAccount);
+    fetchTransactionsByWeekYear();
 
     notifyListeners();
   }
 
-  Future<void> fetchTransactions(Account activeAccount) async {
-    final dataList = await DBHelper.fetchWhere(
-      'transactions',
-      'account_id',
-      activeAccount.id,
+  Future<void> fetchTransactions(
+    Account activeAccount, {
+    DateTimeRange? dateRange,
+  }) async {
+    // Empty the transactions list
+    List<Transaction> transactions = [];
+
+    dateRange ??= DateTimeRange(
+      start: DateTime(1970, 1, 1),
+      end: DateTime.now(),
     );
 
-    List<Transaction> transactions = [];
+    // Fetch transactions from the database
+    final dataList = await DBHelper.fetchWhereMultiple('transactions', [
+      DBWhere(
+        column: 'date',
+        operation: WhereOperation.between,
+        value: [
+          dateRange.start.toIso8601String(),
+          dateRange.end.toIso8601String(),
+        ],
+        chain: WhereChain.and,
+      ),
+      DBWhere(
+        column: 'account_id',
+        operation: WhereOperation.equal,
+        value: activeAccount.id,
+      ),
+    ]);
 
     for (var item in dataList) {
       transactions.add(
@@ -96,32 +120,28 @@ class TransactionsProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> fetchTransactionSummary(Account activeAccount) async {
-    List range = [];
-    if (!isMonthly) {
-      // Weekly
-      int todayWeekday = Jiffy.now().dayOfWeek;
-      DateTime weekStart = DateTime.now().subtract(
-        Duration(days: (todayWeekday - 1)),
-      );
-      weekStart = DateTime(weekStart.year, weekStart.month, weekStart.day);
+  void fetchSummary() {
+    transactionsSummary = transactions
+        .where(
+          (transaction) =>
+              transaction.date.isAfter(
+                DateHelper.getCurrentMonthRange().start,
+              ) &&
+              transaction.date.isBefore(DateHelper.getCurrentMonthRange().end),
+        )
+        .toList();
+  }
 
-      range = [weekStart.toIso8601String(), DateTime.now().toIso8601String()];
-    } else {
-      // Monthly
-      int todayYear = DateTime.now().year;
-      int todayMonth = DateTime.now().month;
-      range = [
-        DateTime(todayYear, todayMonth, 1).toIso8601String(),
-        DateTime.now().toIso8601String(),
-      ];
-    }
+  Future<void> fetchTransactionSummary(Account activeAccount) async {
+    DateTimeRange range = isMonthly
+        ? DateHelper.getCurrentMonthRange()
+        : DateHelper.getCurrentWeekRange();
 
     final dataList = await DBHelper.fetchWhereMultiple('transactions', [
       DBWhere(
         column: 'date',
         operation: WhereOperation.between,
-        value: range,
+        value: [range.start.toIso8601String(), range.end.toIso8601String()],
         chain: WhereChain.and,
       ),
       DBWhere(
@@ -148,7 +168,6 @@ class TransactionsProvider with ChangeNotifier {
 
     transactionsSummary = summaryTransactions.reversed.toList();
     _fetchTransactionSummaryChartData();
-    notifyListeners();
   }
 
   void _fetchTransactionSummaryChartData() {
@@ -166,7 +185,7 @@ class TransactionsProvider with ChangeNotifier {
     }
   }
 
-  Future<void> groupByWeekYear(Account activeAccount) async {
+  Future<void> fetchTransactionsByWeekYear() async {
     Map<String, dynamic> groupedTransactions = {};
 
     for (var transaction in transactions) {
@@ -187,7 +206,6 @@ class TransactionsProvider with ChangeNotifier {
     }
 
     transactionsByWeekYear = groupedTransactions;
-    notifyListeners();
   }
 
   Future<void> expensesDataChart(
@@ -279,7 +297,6 @@ class TransactionsProvider with ChangeNotifier {
     Account activeAccount,
     DateTimeRange? dateRange,
   ) async {
-    await groupByWeekYear(activeAccount);
     Map<String, dynamic> groupedTransactions = transactionsByWeekYear;
     Map<Categories, double> expensesCategoryData = {};
     late int startWeekYear;
@@ -295,10 +312,11 @@ class TransactionsProvider with ChangeNotifier {
       startYear = Jiffy.parseFromDateTime(dateRange.start).year;
       endYear = Jiffy.parseFromDateTime(dateRange.end).year;
     } else {
-      startWeekYear = Jiffy.parseFromDateTime(DateTime.now()).weekOfYear;
-      endWeekYear = startWeekYear;
-      startYear = Jiffy.parseFromDateTime(DateTime.now()).year;
-      endYear = startYear;
+      final DateTimeRange defaultRange = DateHelper.getCurrentMonthRange();
+      startWeekYear = Jiffy.parseFromDateTime(defaultRange.start).weekOfYear;
+      endWeekYear = Jiffy.parseFromDateTime(defaultRange.end).weekOfYear;
+      startYear = Jiffy.parseFromDateTime(defaultRange.start).year;
+      endYear = Jiffy.parseFromDateTime(defaultRange.end).year;
     }
 
     for (int year = startYear; year <= endYear; year++) {
@@ -319,6 +337,7 @@ class TransactionsProvider with ChangeNotifier {
     }
 
     expensesCategoryChartData = expensesCategoryData;
+    fetchCategoryChart();
   }
 
   void fetchCategoryChart() {

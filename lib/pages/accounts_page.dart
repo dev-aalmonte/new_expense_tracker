@@ -114,101 +114,128 @@ class AccountCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final TransactionsProvider transactionsProvider =
-        Provider.of<TransactionsProvider>(context, listen: true);
+        Provider.of<TransactionsProvider>(context, listen: false);
 
     if (transactionsProvider.transactionsSummary.isEmpty) {
       transactionsProvider.fetchTransactionSummary(currentAccount);
     }
 
-    final double spent = transactionsProvider.transactionsSummary
-        .where((transaction) => transaction.type == TransactionType.spent)
-        .fold(0.0, (sum, transaction) => sum + transaction.amount);
-    final double available =
-        transactionsProvider.transactionsSummary
-            .where((transaction) => transaction.type == TransactionType.deposit)
-            .fold(0.0, (sum, transaction) => sum + transaction.amount) -
-        spent;
+    return FutureBuilder(
+      future: transactionsProvider.fetchTransactionSummary(currentAccount),
+      builder: (context, asyncSnapshot) {
+        if (asyncSnapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: GestureDetector(
-        onTap: () {
-          accountProvider.activeAccount = currentAccount;
-          Navigator.of(context).pushNamed(TabsPage.route);
-        },
-        child: Card(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-            child: Column(
-              children: [
-                Container(
-                  width: double.infinity,
-                  height: 200,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 12,
-                  ),
-                  decoration: const BoxDecoration(
-                    borderRadius: BorderRadius.all(Radius.circular(25)),
-                    gradient: LinearGradient(
-                      colors: [
-                        Color(0xffb6f2af),
-                        Color(0xffc0eb9f),
-                        Color(0xffcbe490),
-                        Color(0xffd6dc83),
-                        Color(0xffe1d378),
-                        Color(0xffecc970),
-                        Color(0xfff6c06c),
-                        Color(0xffffb56b),
-                      ],
-                    ),
-                  ),
-                  child: Stack(
-                    children: [
-                      const Positioned(
-                        top: 12,
-                        child: Icon(Icons.card_membership, size: 64),
+        if (asyncSnapshot.hasError) {
+          return Center(
+            child: Text(
+              "An error occurred while fetching transactions summary",
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+          );
+        }
+
+        final double spent = transactionsProvider.transactionsSummary
+            .where((transaction) => transaction.type == TransactionType.spent)
+            .fold(0.0, (sum, transaction) => sum + transaction.amount);
+
+        final double available =
+            transactionsProvider.transactionsSummary
+                .where(
+                  (transaction) => transaction.type == TransactionType.deposit,
+                )
+                .fold(0.0, (sum, transaction) => sum + transaction.amount) -
+            spent;
+
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: GestureDetector(
+            onTap: () {
+              accountProvider.activeAccount = currentAccount;
+              Navigator.of(context).pushNamed(TabsPage.route);
+            },
+            child: Card(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  vertical: 8,
+                  horizontal: 12,
+                ),
+                child: Column(
+                  children: [
+                    Container(
+                      width: double.infinity,
+                      height: 200,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
                       ),
-                      Positioned(
-                        top: 84,
-                        child: Text(
-                          currentAccount.name,
-                          style: Theme.of(context).textTheme.displaySmall,
+                      decoration: const BoxDecoration(
+                        borderRadius: BorderRadius.all(Radius.circular(25)),
+                        gradient: LinearGradient(
+                          colors: [
+                            Color(0xffb6f2af),
+                            Color(0xffc0eb9f),
+                            Color(0xffcbe490),
+                            Color(0xffd6dc83),
+                            Color(0xffe1d378),
+                            Color(0xffecc970),
+                            Color(0xfff6c06c),
+                            Color(0xffffb56b),
+                          ],
                         ),
                       ),
-                      Positioned(
-                        top: 136,
-                        child: Text("Acc #: ${currentAccount.accNumber}"),
+                      child: Stack(
+                        children: [
+                          const Positioned(
+                            top: 12,
+                            child: Icon(Icons.card_membership, size: 64),
+                          ),
+                          Positioned(
+                            top: 84,
+                            child: Text(
+                              currentAccount.name,
+                              style: Theme.of(context).textTheme.displaySmall,
+                            ),
+                          ),
+                          Positioned(
+                            top: 136,
+                            child: Text("Acc #: ${currentAccount.accNumber}"),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
+                    ),
+                    const SizedBox(height: 80),
+                    Text(
+                      "Available",
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      '\$${available.toStringAsFixed(2)}',
+                      style: Theme.of(
+                        context,
+                      ).textTheme.displaySmall!.copyWith(color: Colors.green),
+                    ),
+                    const SizedBox(height: 80),
+                    Text(
+                      "Spent",
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      '\$${spent.toStringAsFixed(2)}',
+                      style: Theme.of(context).textTheme.displaySmall!.copyWith(
+                        color: Colors.red.shade300,
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 80),
-                Text(
-                  "Available",
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  '\$${available.toStringAsFixed(2)}',
-                  style: Theme.of(
-                    context,
-                  ).textTheme.displaySmall!.copyWith(color: Colors.green),
-                ),
-                const SizedBox(height: 80),
-                Text("Spent", style: Theme.of(context).textTheme.titleLarge),
-                const SizedBox(height: 8),
-                Text(
-                  '\$${spent.toStringAsFixed(2)}',
-                  style: Theme.of(context).textTheme.displaySmall!.copyWith(
-                    color: Colors.red.shade300,
-                  ),
-                ),
-              ],
+              ),
             ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }

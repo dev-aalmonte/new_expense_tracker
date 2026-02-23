@@ -48,11 +48,8 @@ class _ChartPageState extends State<ChartPage> {
       }
     });
 
-    transactionsProvider
-        .expensesCategoryDataChart(activeAccount, dateRange)
-        .then((data) {
-          transactionsProvider.fetchCategoryChart();
-        });
+    transactionsProvider.expensesCategoryDataChart(activeAccount, dateRange);
+    transactionsProvider.fetchCategoryChart();
   }
 
   void _selectDateRange() async {

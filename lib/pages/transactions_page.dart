@@ -5,12 +5,14 @@ import 'package:provider/provider.dart';
 
 class TransactionsPage extends StatelessWidget {
   final DateTime date = DateTime.now();
-  final Map<String, dynamic> transactionsHistory;
 
-  TransactionsPage({super.key, required this.transactionsHistory});
+  TransactionsPage({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final TransactionsProvider transactionsProvider =
+        Provider.of<TransactionsProvider>(context, listen: false);
+
     return Padding(
       padding: const EdgeInsets.only(top: 8),
       child: Column(
@@ -40,10 +42,7 @@ class TransactionsPage extends StatelessWidget {
                         ElevatedButton(
                           onPressed: () {
                             // Delete All Data
-                            Provider.of<TransactionsProvider>(
-                              context,
-                              listen: false,
-                            ).deleteData();
+                            transactionsProvider.deleteData();
                             Navigator.pop(context);
                           },
                           child: const Text("Delete Data"),
@@ -59,12 +58,14 @@ class TransactionsPage extends StatelessWidget {
           ),
           Expanded(
             child: ListView.builder(
-              itemCount: transactionsHistory.length,
+              itemCount: transactionsProvider.transactionsByWeekYear.length,
               itemBuilder: (context, index) {
-                String key = transactionsHistory.keys.elementAt(index);
+                String key = transactionsProvider.transactionsByWeekYear.keys
+                    .elementAt(index);
                 return Card(
                   child: TransactionItem(
-                    groupTransaction: transactionsHistory[key],
+                    groupTransaction:
+                        transactionsProvider.transactionsByWeekYear[key],
                   ),
                 );
               },

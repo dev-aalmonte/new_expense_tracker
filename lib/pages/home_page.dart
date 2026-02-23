@@ -8,9 +8,7 @@ import 'package:flutter_multi_formatter/flutter_multi_formatter.dart';
 import 'package:provider/provider.dart';
 
 class HomePage extends StatefulWidget {
-  final List<Transaction> transactionsSummary;
-
-  const HomePage({super.key, required this.transactionsSummary});
+  const HomePage({super.key});
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -110,17 +108,24 @@ class _HomePageState extends State<HomePage> {
             ),
           ),
           Expanded(
-            child: widget.transactionsSummary.isEmpty
+            child: transactionsProvider.transactionsSummary.isEmpty
                 ? _noDataWidget(context)
                 : ListView.builder(
-                    itemCount: widget.transactionsSummary.length > 4
+                    itemCount:
+                        transactionsProvider.transactionsSummary.length > 4
                         ? 4
-                        : widget.transactionsSummary.length,
+                        : transactionsProvider.transactionsSummary.length,
                     itemBuilder: (context, index) => _recentTransactions(
-                      transactionType: widget.transactionsSummary[index].type,
-                      category: widget.transactionsSummary[index].category,
-                      amount: widget.transactionsSummary[index].amount,
-                      date: widget.transactionsSummary[index].date,
+                      transactionType:
+                          transactionsProvider.transactionsSummary[index].type,
+                      category: transactionsProvider
+                          .transactionsSummary[index]
+                          .category,
+                      amount: transactionsProvider
+                          .transactionsSummary[index]
+                          .amount,
+                      date:
+                          transactionsProvider.transactionsSummary[index].date,
                     ),
                   ),
           ),
