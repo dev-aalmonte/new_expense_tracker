@@ -1,3 +1,4 @@
+import 'package:new_expense_tracker/models/account.dart';
 import 'package:new_expense_tracker/models/transaction.dart';
 import 'package:new_expense_tracker/providers/account_provider.dart';
 import 'package:new_expense_tracker/providers/transactions_provider.dart';
@@ -15,14 +16,32 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  late final TransactionsProvider transactionsProvider;
+  late final AccountProvider accountProvider;
+  late final Account activeAccount;
+
+  @override
+  void initState() {
+    super.initState();
+    transactionsProvider = Provider.of<TransactionsProvider>(
+      context,
+      listen: false,
+    );
+    accountProvider = Provider.of<AccountProvider>(context, listen: false);
+
+    activeAccount = accountProvider.activeAccount!;
+  }
+
   @override
   Widget build(BuildContext context) {
     AccountProvider accountProvider = Provider.of<AccountProvider>(
       context,
-      listen: true,
+      listen: false,
     );
     TransactionsProvider transactionsProvider =
-        Provider.of<TransactionsProvider>(context, listen: true);
+        Provider.of<TransactionsProvider>(context, listen: false);
+
+    final transactionsSummary = transactionsProvider.fetchSummary();
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
@@ -72,6 +91,7 @@ class _HomePageState extends State<HomePage> {
                     ),
                     selected: {transactionsProvider.isMonthly},
                     onSelectionChanged: (newSelection) async {
+                      // TODO: Refactor this to use the already fetched data instead of fetching again
                       transactionsProvider.isMonthly = newSelection.first;
                       transactionsProvider.fetchTransactionSummary(
                         accountProvider.activeAccount!,
@@ -108,24 +128,17 @@ class _HomePageState extends State<HomePage> {
             ),
           ),
           Expanded(
-            child: transactionsProvider.transactionsSummary.isEmpty
+            child: transactionsSummary.isEmpty
                 ? _noDataWidget(context)
                 : ListView.builder(
-                    itemCount:
-                        transactionsProvider.transactionsSummary.length > 4
+                    itemCount: transactionsSummary.length > 4
                         ? 4
-                        : transactionsProvider.transactionsSummary.length,
+                        : transactionsSummary.length,
                     itemBuilder: (context, index) => _recentTransactions(
-                      transactionType:
-                          transactionsProvider.transactionsSummary[index].type,
-                      category: transactionsProvider
-                          .transactionsSummary[index]
-                          .category,
-                      amount: transactionsProvider
-                          .transactionsSummary[index]
-                          .amount,
-                      date:
-                          transactionsProvider.transactionsSummary[index].date,
+                      transactionType: transactionsSummary[index].type,
+                      category: transactionsSummary[index].category,
+                      amount: transactionsSummary[index].amount,
+                      date: transactionsSummary[index].date,
                     ),
                   ),
           ),
@@ -152,9 +165,8 @@ class _HomePageState extends State<HomePage> {
   }
 
   Padding _expensesCard(BuildContext context) {
-    var summaryChartData = Provider.of<TransactionsProvider>(
-      context,
-    ).transactionSummaryChartData;
+    var summaryChartData = transactionsProvider
+        .fetchTransactionSummaryChartData();
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Card(

@@ -1,6 +1,4 @@
-import 'package:new_expense_tracker/models/account.dart';
 import 'package:new_expense_tracker/models/transaction.dart';
-import 'package:new_expense_tracker/providers/account_provider.dart';
 import 'package:new_expense_tracker/providers/transactions_provider.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
@@ -14,7 +12,12 @@ class ChartPage extends StatefulWidget {
 }
 
 class _ChartPageState extends State<ChartPage> {
-  double barChartYMax = 0.0;
+  late final TransactionsProvider transactionsProvider;
+  late Map<String, dynamic> expensesChartData;
+  late Map<Categories, double> expensesCategoryChartData;
+  late double barChartYMax;
+  late double pieChartValueSum;
+
   DateTimeRange dateRange = DateTimeRange(
     start: DateTime.now().subtract(const Duration(days: 1)),
     end: DateTime.now(),
@@ -23,33 +26,77 @@ class _ChartPageState extends State<ChartPage> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _loadChartData();
-    });
-  }
-
-  void _loadChartData() {
-    final AccountProvider accountProvider = Provider.of<AccountProvider>(
+    transactionsProvider = Provider.of<TransactionsProvider>(
       context,
       listen: false,
     );
-    final TransactionsProvider transactionsProvider =
-        Provider.of<TransactionsProvider>(context, listen: false);
+    barChartYMax = transactionsProvider.getExpensesChartMaxValue();
+    expensesChartData = transactionsProvider.getExpensesDataChart();
+    expensesCategoryChartData = transactionsProvider
+        .getExpensesCategoryDataChart();
+    pieChartValueSum = expensesCategoryChartData.values.fold(
+      0.0,
+      (previousValue, currValue) => previousValue + currValue,
+    );
+  }
 
-    final Account activeAccount = accountProvider.activeAccount!;
-    transactionsProvider.expensesDataChart(activeAccount, dateRange).then((_) {
-      transactionsProvider.fetchExpensesChart();
-      if (mounted) {
-        setState(() {
-          barChartYMax =
-              transactionsProvider.getExpensesChartMaxValue() +
-              transactionsProvider.getExpensesChartMaxValue() * 0.2;
-        });
-      }
+  List<BarChartGroupData> loadExpensesChart() {
+    final List<BarChartGroupData> expensesChartWidgetList = [];
+    List<int> weekYears = [];
+
+    for (var entry in expensesChartData.entries) {
+      int weekYear = int.parse(entry.key);
+      var data = entry.value;
+      weekYears.add(weekYear);
+
+      expensesChartWidgetList.add(
+        BarChartGroupData(
+          x: weekYear,
+          barRods: [
+            BarChartRodData(
+              toY: (data['deposit'] as num).toDouble(),
+              color: Colors.green,
+            ),
+            BarChartRodData(
+              toY: (data['spent'] as num).toDouble(),
+              color: Colors.red,
+            ),
+          ],
+        ),
+      );
+    }
+
+    return expensesChartWidgetList;
+  }
+
+  List<PieChartSectionData> loadCategoryChart() {
+    final List<PieChartSectionData> categoryChartWidgetList = [];
+    if (expensesCategoryChartData.isNotEmpty) {
+      expensesCategoryChartData.forEach((key, value) {
+        // double percentage = (value / max) * 100;
+        categoryChartWidgetList.add(
+          PieChartSectionData(
+            // radius: 50,
+            value: value,
+            color: Categories.categoryColors(key),
+            showTitle: false,
+            // title: "${percentage.toStringAsFixed(2)}%",
+          ),
+        );
+      });
+    }
+    return categoryChartWidgetList;
+  }
+
+  void _loadChartData() {
+    setState(() {
+      barChartYMax = transactionsProvider.getExpensesChartMaxValue();
+      expensesChartData = transactionsProvider.getExpensesDataChart(
+        dateRange: dateRange,
+      );
+      expensesCategoryChartData = transactionsProvider
+          .getExpensesCategoryDataChart(dateRange: dateRange);
     });
-
-    transactionsProvider.expensesCategoryDataChart(activeAccount, dateRange);
-    transactionsProvider.fetchCategoryChart();
   }
 
   void _selectDateRange() async {
@@ -133,8 +180,8 @@ class _ChartPageState extends State<ChartPage> {
                     height: 200,
                     child: BarChart(
                       BarChartData(
-                        maxY: barChartYMax,
-                        barGroups: transactionsProvider.expensesChartData,
+                        maxY: barChartYMax * 1.2,
+                        barGroups: loadExpensesChart(),
                       ),
                     ),
                   ),
@@ -159,40 +206,41 @@ class _ChartPageState extends State<ChartPage> {
                       style: Theme.of(context).textTheme.titleLarge,
                     ),
                   ),
-                  if (transactionsProvider.categoryChartData.isEmpty)
+                  if (expensesCategoryChartData.isEmpty)
                     NoDataLabel()
                   else
-                    Row(
-                      children: [
-                        Column(
-                          spacing: 8,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: transactionsProvider
-                              .expensesCategoryChartData
-                              .keys
-                              .map(
-                                (category) => ChartLegend(
-                                  color: Categories.categoryColors(category)!,
-                                  label: category.toShortString(),
-                                  value:
-                                      "${((transactionsProvider.expensesCategoryChartData[category]! / transactionsProvider.maxValue) * 100).toStringAsFixed(2)}%",
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Row(
+                        children: [
+                          Column(
+                            spacing: 8,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: expensesCategoryChartData.keys
+                                .map(
+                                  (category) => ChartLegend(
+                                    color: Categories.categoryColors(category)!,
+                                    label: category.toShortString(),
+                                    value:
+                                        "${((expensesCategoryChartData[category]! / pieChartValueSum) * 100).toStringAsFixed(2)}%",
+                                  ),
+                                )
+                                .toList(),
+                          ),
+                          Expanded(
+                            child: SizedBox(
+                              width: 100,
+                              height: 180,
+                              child: Padding(
+                                padding: const EdgeInsets.all(16.0),
+                                child: PieChart(
+                                  PieChartData(sections: loadCategoryChart()),
                                 ),
-                              )
-                              .toList(),
-                        ),
-                        Expanded(
-                          child: SizedBox(
-                            width: 120,
-                            height: 200,
-                            child: PieChart(
-                              PieChartData(
-                                sections:
-                                    transactionsProvider.categoryChartData,
                               ),
                             ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                 ],
               ),

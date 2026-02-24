@@ -57,10 +57,6 @@ class _TabsPageState extends State<TabsPage> {
     return FutureBuilder(
       future: Future.wait([
         transactionsProvider.fetchTransactions(activeAccount),
-        transactionsProvider.fetchTransactionSummary(activeAccount),
-        transactionsProvider.fetchTransactionsByWeekYear(),
-        transactionsProvider.expensesDataChart(activeAccount, null),
-        transactionsProvider.expensesCategoryDataChart(activeAccount, null),
       ]),
       builder: (context, asyncSnapshot) {
         return Consumer<TransactionsProvider>(

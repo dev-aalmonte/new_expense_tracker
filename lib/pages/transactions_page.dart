@@ -12,6 +12,8 @@ class TransactionsPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final TransactionsProvider transactionsProvider =
         Provider.of<TransactionsProvider>(context, listen: false);
+    final transactionsByWeekYear = transactionsProvider
+        .fetchTransactionsByWeekYear();
 
     return Padding(
       padding: const EdgeInsets.only(top: 8),
@@ -58,14 +60,12 @@ class TransactionsPage extends StatelessWidget {
           ),
           Expanded(
             child: ListView.builder(
-              itemCount: transactionsProvider.transactionsByWeekYear.length,
+              itemCount: transactionsByWeekYear.length,
               itemBuilder: (context, index) {
-                String key = transactionsProvider.transactionsByWeekYear.keys
-                    .elementAt(index);
+                String key = transactionsByWeekYear.keys.elementAt(index);
                 return Card(
                   child: TransactionItem(
-                    groupTransaction:
-                        transactionsProvider.transactionsByWeekYear[key],
+                    groupTransaction: transactionsByWeekYear[key],
                   ),
                 );
               },
