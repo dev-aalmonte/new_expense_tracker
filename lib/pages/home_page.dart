@@ -195,6 +195,9 @@ class _HomePageState extends State<HomePage> {
         ),
       );
     } else {
+      final double deposit = summaryChartData["deposit"]!;
+      final double spent = summaryChartData["spent"]!;
+      final double available = deposit - spent;
       return Padding(
         padding: const EdgeInsets.symmetric(vertical: 4),
         child: Card(
@@ -208,9 +211,7 @@ class _HomePageState extends State<HomePage> {
                     _expenseLabel(
                       context,
                       label: "Available",
-                      value:
-                          (summaryChartData["deposit"]! -
-                          summaryChartData["spent"]!),
+                      value: available,
                       color: Colors.green,
                     ),
                     Expanded(
@@ -219,15 +220,8 @@ class _HomePageState extends State<HomePage> {
                         width: 150,
                         child: Stack(
                           children: [
-                            _expenseChartLabel(
-                              context,
-                              summaryChartData["deposit"]!,
-                            ),
-                            _expenseChart(
-                              (summaryChartData["deposit"]! -
-                                  summaryChartData["spent"]!),
-                              summaryChartData["spent"]!,
-                            ),
+                            _expenseChartLabel(context, deposit),
+                            _expenseChart(available < 0 ? 0 : available, spent),
                           ],
                         ),
                       ),
@@ -235,7 +229,7 @@ class _HomePageState extends State<HomePage> {
                     _expenseLabel(
                       context,
                       label: "Spent",
-                      value: summaryChartData["spent"]!,
+                      value: spent,
                       color: Colors.red,
                     ),
                   ],

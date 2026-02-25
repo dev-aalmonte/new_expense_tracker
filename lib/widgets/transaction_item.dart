@@ -73,7 +73,14 @@ class _TransactionItemState extends State<TransactionItem> {
               trailing: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text("\$${sumAmount.toStringAsFixed(2)}"),
+                  Text(
+                    "\$${sumAmount.toStringAsFixed(2)}",
+                    style: Theme.of(context).textTheme.bodySmall!.copyWith(
+                      color: sumAmount < 0
+                          ? Theme.of(context).colorScheme.error
+                          : Theme.of(context).colorScheme.primary,
+                    ),
+                  ),
                   const SizedBox(width: 24),
                   Icon(
                     _expanded
