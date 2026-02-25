@@ -19,12 +19,27 @@ class TabsPage extends StatefulWidget {
 
 class _TabsPageState extends State<TabsPage> {
   int _selectedIndex = 1;
+  late final TransactionsProvider transactionsProvider;
   late PageController _pageController;
+  late Future<void> _fetchFuture;
+  late Account activeAccount;
 
   @override
   void initState() {
-    _pageController = PageController(initialPage: _selectedIndex);
     super.initState();
+    _pageController = PageController(initialPage: _selectedIndex);
+
+    transactionsProvider = Provider.of<TransactionsProvider>(
+      context,
+      listen: false,
+    );
+
+    activeAccount = Provider.of<AccountProvider>(
+      context,
+      listen: false,
+    ).activeAccount!;
+
+    _fetchFuture = transactionsProvider.fetchTransactions(activeAccount);
   }
 
   @override
@@ -46,76 +61,67 @@ class _TabsPageState extends State<TabsPage> {
 
   @override
   Widget build(BuildContext context) {
-    final TransactionsProvider transactionsProvider =
-        Provider.of<TransactionsProvider>(context, listen: false);
-
-    final Account activeAccount = Provider.of<AccountProvider>(
-      context,
-      listen: false,
-    ).activeAccount!;
-
     return FutureBuilder(
-      future: Future.wait([
-        transactionsProvider.fetchTransactions(activeAccount),
-      ]),
+      future: _fetchFuture,
       builder: (context, asyncSnapshot) {
-        return Consumer<TransactionsProvider>(
-          builder: (context, transactionsProvider, _) => PopScope(
-            onPopInvokedWithResult: (bool didPop, dynamic _) async {
-              transactionsProvider.resetData();
-            },
-            child: Scaffold(
-              body: Padding(
-                padding: const EdgeInsets.only(top: 28),
-                child: PageView(
-                  controller: _pageController,
-                  onPageChanged: (value) {
-                    setState(() {
-                      _selectedIndex = value;
-                    });
-                  },
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: TransactionsPage(),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: HomePage(),
-                    ),
-                    const Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 16),
-                      // TODO: Update chart page to solve crash issues
-                      // child: NotFoundPage(),
-                      child: ChartPage(),
-                    ),
-                  ],
-                ),
-              ),
-              floatingActionButton: FloatingActionButton(
-                onPressed: () {
-                  Navigator.pushNamed(context, AddTransactionPage.route);
+        if (asyncSnapshot.connectionState != ConnectionState.done) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+
+        return PopScope(
+          onPopInvokedWithResult: (bool didPop, dynamic _) async {
+            transactionsProvider.resetData();
+          },
+          child: Scaffold(
+            body: Padding(
+              padding: const EdgeInsets.only(top: 28),
+              child: PageView(
+                controller: _pageController,
+                onPageChanged: (value) {
+                  setState(() {
+                    _selectedIndex = value;
+                  });
                 },
-                child: const Icon(Icons.add),
-              ),
-              bottomNavigationBar: BottomNavigationBar(
-                currentIndex: _selectedIndex,
-                onTap: _selectPage,
-                items: const [
-                  BottomNavigationBarItem(
-                    icon: Icon(Icons.compare_arrows),
-                    label: "Transactions",
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: TransactionsPage(),
                   ),
-                  BottomNavigationBarItem(
-                    icon: Icon(Icons.home),
-                    label: "Home",
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: HomePage(),
                   ),
-                  BottomNavigationBarItem(
-                    icon: Icon(Icons.pie_chart),
-                    label: "Charts",
+                  const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 16),
+                    // TODO: Update chart page to solve crash issues
+                    // child: NotFoundPage(),
+                    child: ChartPage(),
                   ),
                 ],
               ),
+            ),
+            floatingActionButton: FloatingActionButton(
+              onPressed: () {
+                Navigator.pushNamed(context, AddTransactionPage.route);
+              },
+              child: const Icon(Icons.add),
+            ),
+            bottomNavigationBar: BottomNavigationBar(
+              currentIndex: _selectedIndex,
+              onTap: _selectPage,
+              items: const [
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.compare_arrows),
+                  label: "Transactions",
+                ),
+                BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.pie_chart),
+                  label: "Charts",
+                ),
+              ],
             ),
           ),
         );

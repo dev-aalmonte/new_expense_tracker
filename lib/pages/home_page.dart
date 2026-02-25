@@ -20,6 +20,9 @@ class _HomePageState extends State<HomePage> {
   late final AccountProvider accountProvider;
   late final Account activeAccount;
 
+  late bool isMonthly;
+  late List<Transaction> transactionsSummary;
+
   @override
   void initState() {
     super.initState();
@@ -30,19 +33,27 @@ class _HomePageState extends State<HomePage> {
     accountProvider = Provider.of<AccountProvider>(context, listen: false);
 
     activeAccount = accountProvider.activeAccount!;
+    isMonthly = transactionsProvider.isMonthly;
+    transactionsSummary = transactionsProvider.fetchSummary(isMonthly);
+  }
+
+  Map<String, double> fetchTransactionSummaryChartData() {
+    Map<String, double> result = {"deposit": 0.00, "spent": 0.00};
+
+    for (Transaction transaction in transactionsSummary) {
+      if (transaction.type == TransactionType.deposit) {
+        result["deposit"] = (result["deposit"] ?? 0) + transaction.amount;
+      }
+      if (transaction.type == TransactionType.spent) {
+        result["spent"] = (result["spent"] ?? 0) + transaction.amount;
+      }
+    }
+
+    return result;
   }
 
   @override
   Widget build(BuildContext context) {
-    AccountProvider accountProvider = Provider.of<AccountProvider>(
-      context,
-      listen: false,
-    );
-    TransactionsProvider transactionsProvider =
-        Provider.of<TransactionsProvider>(context, listen: false);
-
-    final transactionsSummary = transactionsProvider.fetchSummary();
-
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Column(
@@ -89,15 +100,13 @@ class _HomePageState extends State<HomePage> {
                         horizontal: -4,
                       ),
                     ),
-                    selected: {transactionsProvider.isMonthly},
+                    selected: {isMonthly},
                     onSelectionChanged: (newSelection) async {
-                      // TODO: Refactor this to use the already fetched data instead of fetching again
-                      transactionsProvider.isMonthly = newSelection.first;
-                      transactionsProvider.fetchTransactionSummary(
-                        accountProvider.activeAccount!,
+                      transactionsSummary = transactionsProvider.fetchSummary(
+                        newSelection.first,
                       );
                       setState(() {
-                        transactionsProvider.isMonthly = newSelection.first;
+                        isMonthly = newSelection.first;
                       });
                     },
                     segments: const [
@@ -164,63 +173,71 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Padding _expensesCard(BuildContext context) {
-    var summaryChartData = transactionsProvider
-        .fetchTransactionSummaryChartData();
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Card(
-        child: Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: Column(
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: [
-                  _expenseLabel(
-                    context,
-                    label: "Available",
-                    value:
-                        (summaryChartData["deposit"]! -
-                        summaryChartData["spent"]!),
-                    color: Colors.green,
-                  ),
-                  Expanded(
-                    child: SizedBox(
-                      height: 200,
-                      width: 150,
-                      child: Stack(
-                        children: [
-                          _expenseChartLabel(
-                            context,
-                            summaryChartData["deposit"]!,
-                          ),
-                          _expenseChart(
-                            (summaryChartData["deposit"]! -
-                                summaryChartData["spent"]!),
-                            summaryChartData["spent"]!,
-                          ),
-                        ],
+  Widget _expensesCard(BuildContext context) {
+    var summaryChartData = fetchTransactionSummaryChartData();
+    if (transactionsSummary.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4.0),
+        child: Card(
+          child: SizedBox(height: 216, child: _noDataWidget(context)),
+        ),
+      );
+    } else {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        child: Card(
+          child: Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Column(
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    _expenseLabel(
+                      context,
+                      label: "Available",
+                      value:
+                          (summaryChartData["deposit"]! -
+                          summaryChartData["spent"]!),
+                      color: Colors.green,
+                    ),
+                    Expanded(
+                      child: SizedBox(
+                        height: 200,
+                        width: 150,
+                        child: Stack(
+                          children: [
+                            _expenseChartLabel(
+                              context,
+                              summaryChartData["deposit"]!,
+                            ),
+                            _expenseChart(
+                              (summaryChartData["deposit"]! -
+                                  summaryChartData["spent"]!),
+                              summaryChartData["spent"]!,
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-                  ),
-                  _expenseLabel(
-                    context,
-                    label: "Spent",
-                    value: summaryChartData["spent"]!,
-                    color: Colors.red,
-                  ),
-                ],
-              ),
-            ],
+                    _expenseLabel(
+                      context,
+                      label: "Spent",
+                      value: summaryChartData["spent"]!,
+                      color: Colors.red,
+                    ),
+                  ],
+                ),
+              ],
+            ),
+            // child: Padding(
+            //   padding:
+            //       const EdgeInsets.symmetric(horizontal: 16.0, vertical: 32.0),
+            //   child: _noDataWidget(context),
           ),
-          // child: Padding(
-          //   padding:
-          //       const EdgeInsets.symmetric(horizontal: 16.0, vertical: 32.0),
-          //   child: _noDataWidget(context),
         ),
-      ),
-    );
+      );
+    }
   }
 
   Positioned _expenseChartLabel(BuildContext context, double deposit) {

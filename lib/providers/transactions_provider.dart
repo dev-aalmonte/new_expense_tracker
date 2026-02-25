@@ -11,7 +11,6 @@ import 'package:flutter/material.dart';
 import 'package:jiffy/jiffy.dart';
 
 class TransactionsProvider with ChangeNotifier {
-  double maxValue = 0.00;
   bool isDataLoaded = false;
   bool isMonthly = true;
 
@@ -24,7 +23,6 @@ class TransactionsProvider with ChangeNotifier {
   }
 
   void resetData() {
-    maxValue = 0.00;
     isDataLoaded = false;
     isMonthly = false;
 
@@ -93,6 +91,7 @@ class TransactionsProvider with ChangeNotifier {
       ),
     ]);
 
+    // Convert the fetched data into a list of Transaction objects
     for (var item in dataList) {
       transactions.add(
         Transaction(
@@ -151,33 +150,19 @@ class TransactionsProvider with ChangeNotifier {
     transactionsSummary = summaryTransactions.reversed.toList();
   }
 
-  List<Transaction> fetchSummary() {
+  List<Transaction> fetchSummary(bool isMonthly) {
+    DateTimeRange range = isMonthly
+        ? DateHelper.getCurrentMonthRange()
+        : DateHelper.getCurrentWeekRange();
     return transactions
         .where(
           (transaction) =>
               transaction.date.isAfter(
-                DateHelper.getCurrentMonthRange().start,
+                range.start.subtract(Duration(seconds: 1)),
               ) &&
-              transaction.date.isBefore(DateHelper.getCurrentMonthRange().end),
+              transaction.date.isBefore(range.end.add(const Duration(days: 1))),
         )
         .toList();
-  }
-
-  Map<String, double> fetchTransactionSummaryChartData() {
-    final List<Transaction> transactionsSummary = fetchSummary();
-
-    Map<String, double> result = {"deposit": 0.00, "spent": 0.00};
-
-    for (Transaction transaction in transactionsSummary) {
-      if (transaction.type == TransactionType.deposit) {
-        result["deposit"] = (result["deposit"] ?? 0) + transaction.amount;
-      }
-      if (transaction.type == TransactionType.spent) {
-        result["spent"] = (result["spent"] ?? 0) + transaction.amount;
-      }
-    }
-
-    return result;
   }
 
   Map<String, dynamic> fetchTransactionsByWeekYear() {
@@ -273,8 +258,6 @@ class TransactionsProvider with ChangeNotifier {
     late int startYear;
     late int endYear;
 
-    maxValue = 0;
-
     if (dateRange != null) {
       startWeekYear = Jiffy.parseFromDateTime(dateRange.start).weekOfYear;
       endWeekYear = Jiffy.parseFromDateTime(dateRange.end).weekOfYear;
@@ -298,7 +281,6 @@ class TransactionsProvider with ChangeNotifier {
         for (Transaction transaction
             in groupedTransactions[key]['transactions']) {
           if (transaction.category != null) {
-            maxValue += transaction.amount;
             expensesCategoryData[transaction.category!] = transaction.amount;
           }
         }
