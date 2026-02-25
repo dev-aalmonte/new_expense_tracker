@@ -20,10 +20,7 @@ class _ChartPageState extends State<ChartPage> {
   late double barChartYMax;
   late double pieChartValueSum;
 
-  DateTimeRange dateRange = DateTimeRange(
-    start: DateTime.now().subtract(const Duration(days: 1)),
-    end: DateTime.now(),
-  );
+  late DateTimeRange dateRange;
 
   @override
   void initState() {
@@ -33,9 +30,12 @@ class _ChartPageState extends State<ChartPage> {
       listen: false,
     );
     barChartYMax = transactionsProvider.getExpensesChartMaxValue();
-    expensesChartData = transactionsProvider.getExpensesDataChart();
+    dateRange = transactionsProvider.selectedDateRange;
+    expensesChartData = transactionsProvider.getExpensesDataChart(
+      dateRange: dateRange,
+    );
     expensesCategoryChartData = transactionsProvider
-        .getExpensesCategoryDataChart();
+        .getExpensesCategoryDataChart(dateRange: dateRange);
     pieChartValueSum = expensesCategoryChartData.values.fold(
       0.0,
       (previousValue, currValue) => previousValue + currValue,
@@ -115,6 +115,7 @@ class _ChartPageState extends State<ChartPage> {
 
     if (newDateRange != null) {
       setState(() {
+        transactionsProvider.selectedDateRange = newDateRange;
         dateRange = newDateRange;
       });
       _loadChartData();

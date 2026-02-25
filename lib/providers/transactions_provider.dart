@@ -13,6 +13,10 @@ import 'package:jiffy/jiffy.dart';
 class TransactionsProvider with ChangeNotifier {
   bool isDataLoaded = false;
   bool isMonthly = true;
+  DateTimeRange selectedDateRange = DateTimeRange(
+    start: DateTime.now().subtract(const Duration(days: 30)),
+    end: DateTime.now(),
+  );
 
   List<Transaction> transactions = [];
   List<Transaction> transactionsSummary = [];
@@ -25,6 +29,10 @@ class TransactionsProvider with ChangeNotifier {
   void resetData() {
     isDataLoaded = false;
     isMonthly = false;
+    selectedDateRange = DateTimeRange(
+      start: DateTime.now().subtract(const Duration(days: 30)),
+      end: DateTime.now(),
+    );
 
     transactions = [];
     transactionsSummary = [];
