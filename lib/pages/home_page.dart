@@ -21,7 +21,6 @@ class _HomePageState extends State<HomePage> {
   late final Account activeAccount;
 
   late bool isMonthly;
-  late List<Transaction> transactionsSummary;
 
   @override
   void initState() {
@@ -34,10 +33,11 @@ class _HomePageState extends State<HomePage> {
 
     activeAccount = accountProvider.activeAccount!;
     isMonthly = transactionsProvider.isMonthly;
-    transactionsSummary = transactionsProvider.fetchSummary(isMonthly);
   }
 
-  Map<String, double> fetchTransactionSummaryChartData() {
+  Map<String, double> fetchTransactionSummaryChartData(
+    List<Transaction> transactionsSummary,
+  ) {
     Map<String, double> result = {"deposit": 0.00, "spent": 0.00};
 
     for (Transaction transaction in transactionsSummary) {
@@ -54,109 +54,116 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            height: 51.0,
-            child: Stack(
-              alignment: Alignment.centerLeft,
-              children: [
-                DropdownMenu(
-                  initialSelection: accountProvider.activeAccount,
-                  inputDecorationTheme: const InputDecorationTheme(
-                    border: InputBorder.none,
-                  ),
-                  menuStyle: const MenuStyle(
-                    visualDensity: VisualDensity.compact,
-                    padding: WidgetStatePropertyAll(EdgeInsets.zero),
-                  ),
-                  textStyle: Theme.of(context).textTheme.titleLarge,
-                  trailingIcon: const Icon(null),
-                  selectedTrailingIcon: const Icon(null),
-                  label: const Text("Account"),
-                  onSelected: (value) {
-                    accountProvider.activeAccount = value;
-                    transactionsProvider.resetData();
-                  },
-                  dropdownMenuEntries: accountProvider.accounts
-                      .map(
-                        (item) => DropdownMenuEntry(
-                          value: item,
-                          label: item.name,
-                          leadingIcon: const Icon(Icons.credit_card),
+    return Consumer<TransactionsProvider>(
+      builder: (context, transactionsProvider, child) {
+        // Recalculate summary on every rebuild (when provider notifies)
+        final transactionsSummary = transactionsProvider.fetchSummary(
+          isMonthly,
+        );
+
+        return Padding(
+          padding: const EdgeInsets.symmetric(vertical: 4),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SizedBox(
+                height: 51.0,
+                child: Stack(
+                  alignment: Alignment.centerLeft,
+                  children: [
+                    DropdownMenu(
+                      initialSelection: accountProvider.activeAccount,
+                      inputDecorationTheme: const InputDecorationTheme(
+                        border: InputBorder.none,
+                      ),
+                      menuStyle: const MenuStyle(
+                        visualDensity: VisualDensity.compact,
+                        padding: WidgetStatePropertyAll(EdgeInsets.zero),
+                      ),
+                      textStyle: Theme.of(context).textTheme.titleLarge,
+                      trailingIcon: const Icon(null),
+                      selectedTrailingIcon: const Icon(null),
+                      label: const Text("Account"),
+                      onSelected: (value) {
+                        accountProvider.activeAccount = value;
+                        transactionsProvider.resetData();
+                      },
+                      dropdownMenuEntries: accountProvider.accounts
+                          .map(
+                            (item) => DropdownMenuEntry(
+                              value: item,
+                              label: item.name,
+                              leadingIcon: const Icon(Icons.credit_card),
+                            ),
+                          )
+                          .toList(),
+                    ),
+                    Align(
+                      alignment: Alignment.bottomRight,
+                      child: SegmentedButton(
+                        style: const ButtonStyle(
+                          visualDensity: VisualDensity(
+                            vertical: -4,
+                            horizontal: -4,
+                          ),
                         ),
-                      )
-                      .toList(),
-                ),
-                Align(
-                  alignment: Alignment.bottomRight,
-                  child: SegmentedButton(
-                    style: const ButtonStyle(
-                      visualDensity: VisualDensity(
-                        vertical: -4,
-                        horizontal: -4,
+                        selected: {isMonthly},
+                        onSelectionChanged: (newSelection) async {
+                          transactionsProvider.isMonthly = newSelection.first;
+                          setState(() {
+                            isMonthly = newSelection.first;
+                          });
+                        },
+                        segments: const [
+                          ButtonSegment(
+                            value: false,
+                            label: Text("Week"),
+                            icon: Icon(Icons.calendar_view_week),
+                          ),
+                          ButtonSegment(
+                            value: true,
+                            label: Text("Month"),
+                            icon: Icon(Icons.calendar_view_month),
+                          ),
+                        ],
                       ),
                     ),
-                    selected: {isMonthly},
-                    onSelectionChanged: (newSelection) async {
-                      transactionsSummary = transactionsProvider.fetchSummary(
-                        newSelection.first,
-                      );
-                      setState(() {
-                        isMonthly = newSelection.first;
-                      });
-                    },
-                    segments: const [
-                      ButtonSegment(
-                        value: false,
-                        label: Text("Week"),
-                        icon: Icon(Icons.calendar_view_week),
-                      ),
-                      ButtonSegment(
-                        value: true,
-                        label: Text("Month"),
-                        icon: Icon(Icons.calendar_view_month),
-                      ),
-                    ],
-                  ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+              _expensesCard(context, transactionsSummary),
+              Padding(
+                padding: const EdgeInsets.only(top: 32),
+                child: Text(
+                  "Recent Transactions",
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleLarge!.copyWith(height: .1),
+                ),
+              ),
+              Expanded(
+                child: transactionsSummary.isEmpty
+                    ? _noDataWidget(context)
+                    : ListView.builder(
+                        itemCount: transactionsSummary.length > 4
+                            ? 4
+                            : transactionsSummary.length,
+                        itemBuilder: (context, index) => _recentTransactions(
+                          transactionType: transactionsSummary[index].type,
+                          category: transactionsSummary[index].category,
+                          amount: transactionsSummary[index].amount,
+                          date: transactionsSummary[index].date,
+                        ),
+                      ),
+              ),
+            ],
           ),
-          _expensesCard(context),
-          Padding(
-            padding: const EdgeInsets.only(top: 32),
-            child: Text(
-              "Recent Transactions",
-              style: Theme.of(
-                context,
-              ).textTheme.titleLarge!.copyWith(height: .1),
-            ),
-          ),
-          Expanded(
-            child: transactionsSummary.isEmpty
-                ? _noDataWidget(context)
-                : ListView.builder(
-                    itemCount: transactionsSummary.length > 4
-                        ? 4
-                        : transactionsSummary.length,
-                    itemBuilder: (context, index) => _recentTransactions(
-                      transactionType: transactionsSummary[index].type,
-                      category: transactionsSummary[index].category,
-                      amount: transactionsSummary[index].amount,
-                      date: transactionsSummary[index].date,
-                    ),
-                  ),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 
-  Center _noDataWidget(BuildContext context) {
+  Widget _noDataWidget(BuildContext context) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -173,8 +180,13 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _expensesCard(BuildContext context) {
-    var summaryChartData = fetchTransactionSummaryChartData();
+  Widget _expensesCard(
+    BuildContext context,
+    List<Transaction> transactionsSummary,
+  ) {
+    var summaryChartData = fetchTransactionSummaryChartData(
+      transactionsSummary,
+    );
     if (transactionsSummary.isEmpty) {
       return Padding(
         padding: const EdgeInsets.symmetric(vertical: 4.0),

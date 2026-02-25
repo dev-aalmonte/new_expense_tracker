@@ -77,29 +77,33 @@ class _TabsPageState extends State<TabsPage> {
           child: Scaffold(
             body: Padding(
               padding: const EdgeInsets.only(top: 28),
-              child: PageView(
-                controller: _pageController,
-                onPageChanged: (value) {
-                  setState(() {
-                    _selectedIndex = value;
-                  });
+              child: Consumer<TransactionsProvider>(
+                builder: (context, transProvider, _) {
+                  return PageView(
+                    controller: _pageController,
+                    onPageChanged: (value) {
+                      setState(() {
+                        _selectedIndex = value;
+                      });
+                    },
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: TransactionsPage(),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: HomePage(),
+                      ),
+                      const Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 16),
+                        // TODO: Update chart page to solve crash issues
+                        // child: NotFoundPage(),
+                        child: ChartPage(),
+                      ),
+                    ],
+                  );
                 },
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: TransactionsPage(),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: HomePage(),
-                  ),
-                  const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 16),
-                    // TODO: Update chart page to solve crash issues
-                    // child: NotFoundPage(),
-                    child: ChartPage(),
-                  ),
-                ],
               ),
             ),
             floatingActionButton: FloatingActionButton(

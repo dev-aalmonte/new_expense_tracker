@@ -52,8 +52,10 @@ class TransactionsProvider with ChangeNotifier {
     transaction.id = await DBHelper.insert('transactions', transactionObject);
 
     // Refresh the transaction summary and chart data
-    fetchTransactionSummary(activeAccount);
-    fetchTransactionsByWeekYear();
+    if (transaction.type == TransactionType.deposit) {
+      transaction.category = null;
+    }
+    transactions.insert(0, transaction);
 
     notifyListeners();
   }

@@ -60,7 +60,7 @@ class Transaction {
   final TransactionType type;
   final double amount;
   final DateTime date;
-  final Categories? category;
+  Categories? category;
   final String? description;
 
   Transaction({
