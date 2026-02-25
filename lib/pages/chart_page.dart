@@ -1,3 +1,4 @@
+import 'package:jiffy/jiffy.dart';
 import 'package:new_expense_tracker/models/transaction.dart';
 import 'package:new_expense_tracker/providers/transactions_provider.dart';
 import 'package:fl_chart/fl_chart.dart';
@@ -97,6 +98,10 @@ class _ChartPageState extends State<ChartPage> {
       );
       expensesCategoryChartData = transactionsProvider
           .getExpensesCategoryDataChart(dateRange: dateRange);
+      pieChartValueSum = expensesCategoryChartData.values.fold(
+        0.0,
+        (previousValue, currValue) => previousValue + currValue,
+      );
     });
   }
 
@@ -192,15 +197,29 @@ class _ChartPageState extends State<ChartPage> {
                               reservedSize: 30,
                               getTitlesWidget: (value, meta) {
                                 int weekYear = value.toInt();
-                                DateTime firstDayOfWeek = DateTime.now()
-                                    .subtract(
-                                      Duration(
-                                        days: DateTime.now().weekday - 1,
-                                      ),
-                                    )
-                                    .add(Duration(days: (weekYear - 1) * 7));
+                                DateTime today = DateTime.now();
+                                int todayWeekYear = Jiffy.parseFromDateTime(
+                                  today,
+                                ).weekOfYear;
+
+                                late DateTime firstDayOftheWeek;
+
+                                if (todayWeekYear == weekYear) {
+                                  firstDayOftheWeek = today.subtract(
+                                    Duration(days: today.weekday - 1),
+                                  );
+                                } else {
+                                  int weekDifference = todayWeekYear - weekYear;
+                                  firstDayOftheWeek = today.subtract(
+                                    Duration(
+                                      days:
+                                          (today.weekday - 1) +
+                                          (weekDifference * 7),
+                                    ),
+                                  );
+                                }
                                 String formattedDate =
-                                    "${firstDayOfWeek.month}/${firstDayOfWeek.day}";
+                                    "${firstDayOftheWeek.month}/${firstDayOftheWeek.day}";
                                 return Padding(
                                   padding: const EdgeInsets.only(top: 8),
                                   child: Text(formattedDate),

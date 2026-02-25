@@ -212,12 +212,29 @@ class TransactionsProvider with ChangeNotifier {
   Map<String, dynamic> getExpensesDataChart({DateTimeRange? dateRange}) {
     Map<String, dynamic> groupedTransactions = fetchTransactionsByWeekYear();
     List<Map<String, dynamic>> expensesData = [];
-    int weekYear = Jiffy.parseFromDateTime(DateTime.now()).weekOfYear;
-    int year = Jiffy.parseFromDateTime(DateTime.now()).year;
-    int max = 5; // Maximum week Lookout (Relative to the actual week)
+    int fromWeekYear = dateRange != null
+        ? Jiffy.parseFromDateTime(dateRange.start).weekOfYear
+        : Jiffy.parseFromDateTime(DateTime.now()).weekOfYear;
+    int fromYear = dateRange != null
+        ? Jiffy.parseFromDateTime(dateRange.start).year
+        : Jiffy.parseFromDateTime(DateTime.now()).year;
+
+    int toWeekYear = dateRange != null
+        ? Jiffy.parseFromDateTime(dateRange.end).weekOfYear
+        : Jiffy.parseFromDateTime(DateTime.now()).weekOfYear;
+    int toYear = dateRange != null
+        ? Jiffy.parseFromDateTime(dateRange.end).year
+        : Jiffy.parseFromDateTime(DateTime.now()).year;
+
+    int maxLoad = 5;
+    int max =
+        (toYear - fromYear) * 52 +
+        (toWeekYear - fromWeekYear) +
+        1; // Maximum week Lookout (Relative to the actual week)
+    max = min(max, maxLoad);
 
     for (int actual = 0; actual < max; actual++) {
-      String key = "$year-${weekYear - actual}";
+      String key = "$toYear-${toWeekYear - actual}";
 
       List<Transaction> weeklyTransactions = groupedTransactions[key] == null
           ? []
@@ -237,7 +254,8 @@ class TransactionsProvider with ChangeNotifier {
       expensesData.add({
         'deposit': deposit,
         'spent': spent,
-        'weekYear': weekYear - actual,
+        'weekYear': toWeekYear - actual,
+        'year': toYear,
       });
     }
 
