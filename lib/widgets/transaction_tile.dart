@@ -70,23 +70,37 @@ class TransactionTile extends StatelessWidget {
                       top: 5,
                       bottom: 5,
                     ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        CircleAvatar(
-                          backgroundColor: Categories.categoryColors(category!),
-                          radius: 10,
-                        ),
-                        const SizedBox(width: 12),
-                        Text(
-                          category!.toShortString(),
-                          style: Theme.of(context).textTheme.labelLarge!
-                              .copyWith(
-                                fontWeight: FontWeight.bold,
-                                letterSpacing: .5,
-                              ),
-                        ),
-                      ],
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Categories.categoryColors(
+                          category!,
+                        )?.withAlpha(50),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          CircleAvatar(
+                            backgroundColor: Categories.categoryColors(
+                              category!,
+                            ),
+                            radius: 8,
+                          ),
+                          const SizedBox(width: 12),
+                          Text(
+                            category!.toShortString(),
+                            style: Theme.of(context).textTheme.labelLarge!
+                                .copyWith(
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: .5,
+                                ),
+                          ),
+                        ],
+                      ),
                     ),
                   )
                 : null,
