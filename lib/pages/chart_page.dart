@@ -3,6 +3,7 @@ import 'package:new_expense_tracker/providers/transactions_provider.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_multi_formatter/flutter_multi_formatter.dart';
 
 class ChartPage extends StatefulWidget {
   const ChartPage({super.key});
@@ -176,10 +177,65 @@ class _ChartPageState extends State<ChartPage> {
                       ],
                     ),
                   ),
-                  SizedBox(
+                  Container(
+                    padding: const EdgeInsets.only(right: 16),
                     height: 200,
                     child: BarChart(
                       BarChartData(
+                        titlesData: FlTitlesData(
+                          topTitles: AxisTitles(
+                            sideTitles: SideTitles(showTitles: false),
+                          ),
+                          bottomTitles: AxisTitles(
+                            sideTitles: SideTitles(
+                              showTitles: true,
+                              reservedSize: 30,
+                              getTitlesWidget: (value, meta) {
+                                int weekYear = value.toInt();
+                                DateTime firstDayOfWeek = DateTime.now()
+                                    .subtract(
+                                      Duration(
+                                        days: DateTime.now().weekday - 1,
+                                      ),
+                                    )
+                                    .add(Duration(days: (weekYear - 1) * 7));
+                                String formattedDate =
+                                    "${firstDayOfWeek.month}/${firstDayOfWeek.day}";
+                                return Padding(
+                                  padding: const EdgeInsets.only(top: 8),
+                                  child: Text(formattedDate),
+                                );
+                              },
+                            ),
+                          ),
+                          rightTitles: AxisTitles(
+                            sideTitles: SideTitles(showTitles: false),
+                          ),
+                          leftTitles: AxisTitles(
+                            sideTitles: SideTitles(
+                              showTitles: true,
+                              reservedSize: 80,
+                              getTitlesWidget: (value, meta) {
+                                return Align(
+                                  alignment: Alignment.centerRight,
+                                  child: Padding(
+                                    padding: const EdgeInsets.only(right: 8),
+                                    child: Text(
+                                      toCurrencyString(
+                                        value.toInt().toString(),
+                                        leadingSymbol:
+                                            CurrencySymbols.DOLLAR_SIGN,
+                                      ),
+                                      style: Theme.of(
+                                        context,
+                                      ).textTheme.labelMedium,
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                        ),
                         maxY: barChartYMax * 1.2,
                         barGroups: loadExpensesChart(),
                       ),
