@@ -70,42 +70,45 @@ class TransactionTile extends StatelessWidget {
                       top: 5,
                       bottom: 5,
                     ),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 6,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Categories.categoryColors(
-                          category!,
-                        )?.withAlpha(50),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          CircleAvatar(
-                            backgroundColor: Categories.categoryColors(
-                              category!,
-                            ),
-                            radius: 8,
-                          ),
-                          const SizedBox(width: 12),
-                          Text(
-                            category!.toShortString(),
-                            style: Theme.of(context).textTheme.labelLarge!
-                                .copyWith(
-                                  fontWeight: FontWeight.bold,
-                                  letterSpacing: .5,
-                                ),
-                          ),
-                        ],
-                      ),
-                    ),
+                    child: CategoryLabel(category: category),
                   )
                 : null,
           ),
           if (!isLastItem) const Divider(height: 0, indent: 8, endIndent: 24),
+        ],
+      ),
+    );
+  }
+}
+
+class CategoryLabel extends StatelessWidget {
+  const CategoryLabel({super.key, required this.category});
+
+  final Categories? category;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: Categories.categoryColors(category!)?.withAlpha(50),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          CircleAvatar(
+            backgroundColor: Categories.categoryColors(category!),
+            radius: 8,
+          ),
+          const SizedBox(width: 12),
+          Text(
+            category!.toShortString(),
+            style: Theme.of(context).textTheme.labelLarge!.copyWith(
+              fontWeight: FontWeight.bold,
+              letterSpacing: .5,
+            ),
+          ),
         ],
       ),
     );
@@ -140,17 +143,15 @@ class TransactionDialog extends StatelessWidget {
                 children: [
                   Icon(icon, color: iconColor, size: 32),
                   const SizedBox(width: 8),
-                  Column(
-                    children: [
-                      Text(
-                        toCurrencyString(
-                          amount.toStringAsFixed(2),
-                          leadingSymbol: CurrencySymbols.DOLLAR_SIGN,
-                        ),
-                        style: Theme.of(context).textTheme.titleLarge,
-                      ),
-                    ],
+                  Text(
+                    toCurrencyString(
+                      amount.toStringAsFixed(2),
+                      leadingSymbol: CurrencySymbols.DOLLAR_SIGN,
+                    ),
+                    style: Theme.of(context).textTheme.titleLarge,
                   ),
+                  const SizedBox(width: 64),
+                  if (category != null) CategoryLabel(category: category),
                 ],
               ),
               const SizedBox(height: 8),
@@ -164,31 +165,6 @@ class TransactionDialog extends StatelessWidget {
             ],
           ),
         ),
-        // Row(
-        //   children: [
-        //     Padding(
-        //       padding: const EdgeInsets.all(16),
-        //       child: Icon(
-        //         icon,
-        //         color: iconColor,
-        //         size: 32,
-        //       ),
-        //     ),
-        //     Column(
-        //       children: [
-        //         Text(
-        //           toCurrencyString(amount.toStringAsFixed(2),
-        //               leadingSymbol: CurrencySymbols.DOLLAR_SIGN),
-        //           style: Theme.of(context).textTheme.titleLarge,
-        //         ),
-        //         const SizedBox(
-        //           height: 8,
-        //         ),
-        //         Text(description ?? ""),
-        //       ],
-        //     )
-        //   ],
-        // )
       ],
     );
   }

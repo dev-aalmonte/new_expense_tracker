@@ -153,6 +153,7 @@ class _HomePageState extends State<HomePage> {
                           category: transactionsSummary[index].category,
                           amount: transactionsSummary[index].amount,
                           date: transactionsSummary[index].date,
+                          description: transactionsSummary[index].description,
                         ),
                       ),
               ),
@@ -329,6 +330,7 @@ class _HomePageState extends State<HomePage> {
     required double amount,
     required DateTime date,
     Categories? category,
+    String? description,
   }) {
     return Card(
       child: TransactionTile(
@@ -336,6 +338,7 @@ class _HomePageState extends State<HomePage> {
         category: category,
         amount: amount,
         date: date,
+        description: description,
       ),
     );
   }

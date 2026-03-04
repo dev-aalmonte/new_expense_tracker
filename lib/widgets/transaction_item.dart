@@ -113,6 +113,7 @@ class _TransactionItemState extends State<TransactionItem> {
                   category: transactions[index].category,
                   amount: transactions[index].amount,
                   date: transactions[index].date,
+                  description: transactions[index].description,
                   isLastItem: index == transactions.length - 1,
                 ),
               ),
