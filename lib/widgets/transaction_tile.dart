@@ -185,29 +185,25 @@ class TransactionDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SimpleDialog(
-      backgroundColor: Theme.of(context).colorScheme.surfaceContainerLow,
+      title: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Icon(icon, color: iconColor, size: 32),
+          const SizedBox(width: 8),
+          Text(
+            toCurrencyString(
+              transaction.amount.toString(),
+              leadingSymbol: CurrencySymbols.DOLLAR_SIGN,
+            ),
+            style: Theme.of(context).textTheme.titleLarge,
+          ),
+        ],
+      ),
       children: [
         Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Column(
             children: [
-              Row(
-                children: [
-                  Icon(icon, color: iconColor, size: 32),
-                  const SizedBox(width: 8),
-                  Text(
-                    toCurrencyString(
-                      transaction.amount.toStringAsFixed(2),
-                      leadingSymbol: CurrencySymbols.DOLLAR_SIGN,
-                    ),
-                    style: Theme.of(context).textTheme.titleLarge,
-                  ),
-                  const SizedBox(width: 64),
-                  if (transaction.category != null)
-                    CategoryLabel(category: transaction.category),
-                ],
-              ),
-              const SizedBox(height: 8),
               Align(
                 alignment: Alignment.topLeft,
                 child: Padding(
