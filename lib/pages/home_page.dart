@@ -87,6 +87,9 @@ class _HomePageState extends State<HomePage> {
                       onSelected: (value) {
                         accountProvider.activeAccount = value;
                         transactionsProvider.resetData();
+                        transactionsProvider
+                            .fetchTransactions(value!)
+                            .then((_) => setState(() {}));
                       },
                       dropdownMenuEntries: accountProvider.accounts
                           .map(
