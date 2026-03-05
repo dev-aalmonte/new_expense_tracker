@@ -103,6 +103,20 @@ class TransactionsProvider with ChangeNotifier {
     }
   }
 
+  Future<void> deleteTransaction(int transactionId) async {
+    await DBHelper.delete(
+      'transactions',
+      DBWhere(
+        column: 'id',
+        operation: WhereOperation.equal,
+        value: transactionId,
+      ),
+    );
+
+    transactions.removeWhere((transaction) => transaction.id == transactionId);
+    notifyListeners();
+  }
+
   Future<void> fetchTransactions(
     Account activeAccount, {
     DateTimeRange? dateRange,
