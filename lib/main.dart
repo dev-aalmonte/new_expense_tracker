@@ -1,3 +1,4 @@
+import 'package:new_expense_tracker/models/transaction.dart';
 import 'package:new_expense_tracker/pages/accounts_page.dart';
 import 'package:new_expense_tracker/pages/add_account_page.dart';
 import 'package:new_expense_tracker/pages/add_transaction_page.dart';
@@ -39,7 +40,16 @@ class MyApp extends StatelessWidget {
           TabsPage.route: (context) => const TabsPage(),
           AccountPage.route: (context) => const AccountPage(),
           AddAccountPage.route: (context) => const AddAccountPage(),
-          AddTransactionPage.route: (context) => const AddTransactionPage(),
+        },
+        onGenerateRoute: (settings) {
+          if (settings.name == AddTransactionPage.route) {
+            final transactionToEdit = settings.arguments as Transaction?;
+            return MaterialPageRoute(
+              builder: (context) =>
+                  AddTransactionPage(transactionToEdit: transactionToEdit),
+            );
+          }
+          return null;
         },
       ),
     );

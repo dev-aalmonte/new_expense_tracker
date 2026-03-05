@@ -10,8 +10,13 @@ import 'package:provider/provider.dart';
 class AddTransactionPage extends StatefulWidget {
   static const String route = '/addTransactions';
   final Function? changePage;
+  final Transaction? transactionToEdit;
 
-  const AddTransactionPage({super.key, this.changePage});
+  const AddTransactionPage({
+    super.key,
+    this.changePage,
+    this.transactionToEdit,
+  });
 
   @override
   State<AddTransactionPage> createState() => _AddTransactionPageState();
@@ -22,6 +27,7 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
   final _dateController = TextEditingController();
   final _descriptionController = TextEditingController();
   late final Account _activeAccount;
+  late Transaction? transactionToEdit;
 
   final DateTime _today = DateTime.now();
   late DateTime _actualDate;
@@ -31,12 +37,27 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
   @override
   void initState() {
     super.initState();
-    _actualDate = _today;
-    _dateController.text = DateFormat('M/d/y').format(_today);
-    _amountController.text = "0.00";
-    _amountController.selection = TextSelection.fromPosition(
-      TextPosition(offset: _amountController.text.length),
-    );
+
+    transactionToEdit = widget.transactionToEdit;
+    if (transactionToEdit != null) {
+      _isDeposit = transactionToEdit!.type == TransactionType.deposit;
+      category = !_isDeposit
+          ? transactionToEdit!.category!.toShortString()
+          : Categories.bill.toShortString();
+      _amountController.text = transactionToEdit!.amount.toStringAsFixed(2);
+      _dateController.text = DateFormat(
+        'M/d/y',
+      ).format(transactionToEdit!.date);
+      _descriptionController.text = transactionToEdit!.description ?? "";
+      _actualDate = transactionToEdit!.date;
+    } else {
+      _actualDate = _today;
+      _dateController.text = DateFormat('M/d/y').format(_today);
+      _amountController.text = "0.00";
+      _amountController.selection = TextSelection.fromPosition(
+        TextPosition(offset: _amountController.text.length),
+      );
+    }
     _activeAccount = Provider.of<AccountProvider>(
       context,
       listen: false,
@@ -54,18 +75,7 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
       description: _descriptionController.text,
     );
 
-    if (transaction.amount > 0.00) {
-      Provider.of<TransactionsProvider>(
-        context,
-        listen: false,
-      ).addTransaction(transaction, _activeAccount);
-
-      if (widget.changePage != null) {
-        widget.changePage!();
-      } else {
-        Navigator.pop(context);
-      }
-    } else {
+    if (transaction.amount <= 0.00) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           backgroundColor: Colors.red,
@@ -78,6 +88,25 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
           ),
         ),
       );
+    } else {
+      if (transactionToEdit != null) {
+        transaction.id = transactionToEdit!.id;
+        Provider.of<TransactionsProvider>(
+          context,
+          listen: false,
+        ).editTransaction(transaction, _activeAccount);
+      } else {
+        Provider.of<TransactionsProvider>(
+          context,
+          listen: false,
+        ).addTransaction(transaction, _activeAccount);
+      }
+
+      if (widget.changePage != null) {
+        widget.changePage!();
+      } else {
+        Navigator.pop(context);
+      }
     }
   }
 
@@ -106,7 +135,9 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   Text(
-                    "Add Transaction",
+                    transactionToEdit != null
+                        ? "Edit Transaction"
+                        : "Add New Transaction",
                     style: Theme.of(context).textTheme.titleLarge,
                   ),
                   _depositExpenseSelectorWidget(context),
@@ -154,7 +185,9 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
                   ),
                   ElevatedButton(
                     onPressed: _submitForm,
-                    child: const Text('Add Transaction'),
+                    child: transactionToEdit != null
+                        ? const Text('Save Changes')
+                        : const Text('Add Transaction'),
                   ),
                 ],
               ),
@@ -173,20 +206,20 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
         });
       },
       style: ButtonStyle(
-        backgroundColor: MaterialStatePropertyAll(
+        backgroundColor: WidgetStatePropertyAll(
           _isDeposit
               ? Theme.of(context).colorScheme.primary
               : Theme.of(context).colorScheme.error,
         ),
-        foregroundColor: MaterialStatePropertyAll(
+        foregroundColor: WidgetStatePropertyAll(
           _isDeposit
               ? Theme.of(context).colorScheme.onPrimary
               : Theme.of(context).colorScheme.onError,
         ),
-        padding: const MaterialStatePropertyAll(
+        padding: const WidgetStatePropertyAll(
           EdgeInsets.symmetric(horizontal: 16),
         ),
-        minimumSize: const MaterialStatePropertyAll(Size(118, 42)),
+        minimumSize: const WidgetStatePropertyAll(Size(118, 42)),
       ),
       icon: Icon(_isDeposit ? Icons.arrow_upward : Icons.arrow_downward),
       label: Text(_isDeposit ? "Deposit" : "Expense"),
@@ -201,7 +234,7 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
         borderRadius: BorderRadius.circular(50),
         boxShadow: [
           BoxShadow(
-            color: colorScheme.shadow.withOpacity(0.1),
+            color: colorScheme.shadow.withAlpha(26),
             spreadRadius: 1,
             blurRadius: 1,
             offset: const Offset(0, 2),

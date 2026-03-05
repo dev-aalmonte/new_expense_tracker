@@ -2,22 +2,15 @@ import 'package:new_expense_tracker/models/transaction.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_multi_formatter/flutter_multi_formatter.dart';
 import 'package:intl/intl.dart';
+import 'package:new_expense_tracker/pages/add_transaction_page.dart';
 
 class TransactionTile extends StatelessWidget {
-  final TransactionType transactionType;
-  final double amount;
-  final DateTime date;
-  final Categories? category;
-  final String? description;
+  final Transaction transaction;
   final bool isLastItem;
 
   const TransactionTile({
     super.key,
-    required this.transactionType,
-    required this.amount,
-    required this.date,
-    this.category,
-    this.description,
+    required this.transaction,
     this.isLastItem = false,
   });
 
@@ -26,7 +19,7 @@ class TransactionTile extends StatelessWidget {
     late MaterialColor iconColor;
     late IconData icon;
 
-    switch (transactionType) {
+    switch (transaction.type) {
       case TransactionType.deposit:
         icon = Icons.arrow_upward;
         iconColor = Colors.green;
@@ -41,9 +34,7 @@ class TransactionTile extends StatelessWidget {
       onTap: () => showDialog(
         context: context,
         builder: (context) => TransactionDialog(
-          amount: amount,
-          category: category,
-          description: description,
+          transaction: transaction,
           icon: icon,
           iconColor: iconColor,
         ),
@@ -57,12 +48,12 @@ class TransactionTile extends StatelessWidget {
             ),
             title: Text(
               toCurrencyString(
-                amount.toString(),
+                transaction.amount.toString(),
                 leadingSymbol: CurrencySymbols.DOLLAR_SIGN,
               ),
             ),
-            subtitle: Text(DateFormat("M/d/y").format(date)),
-            trailing: category != null
+            subtitle: Text(DateFormat("M/d/y").format(transaction.date)),
+            trailing: transaction.category != null
                 ? Padding(
                     padding: const EdgeInsets.only(
                       left: 10,
@@ -70,7 +61,7 @@ class TransactionTile extends StatelessWidget {
                       top: 5,
                       bottom: 5,
                     ),
-                    child: CategoryLabel(category: category),
+                    child: CategoryLabel(category: transaction.category),
                   )
                 : null,
           ),
@@ -116,17 +107,13 @@ class CategoryLabel extends StatelessWidget {
 }
 
 class TransactionDialog extends StatelessWidget {
-  final double amount;
-  final String? description;
-  final Categories? category;
+  final Transaction transaction;
   final IconData icon;
   final MaterialColor iconColor;
 
   const TransactionDialog({
     super.key,
-    required this.amount,
-    this.description,
-    this.category,
+    required this.transaction,
     required this.icon,
     required this.iconColor,
   });
@@ -134,6 +121,7 @@ class TransactionDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SimpleDialog(
+      backgroundColor: Theme.of(context).colorScheme.surfaceContainerLow,
       children: [
         Padding(
           padding: const EdgeInsets.all(16),
@@ -145,13 +133,14 @@ class TransactionDialog extends StatelessWidget {
                   const SizedBox(width: 8),
                   Text(
                     toCurrencyString(
-                      amount.toStringAsFixed(2),
+                      transaction.amount.toStringAsFixed(2),
                       leadingSymbol: CurrencySymbols.DOLLAR_SIGN,
                     ),
                     style: Theme.of(context).textTheme.titleLarge,
                   ),
                   const SizedBox(width: 64),
-                  if (category != null) CategoryLabel(category: category),
+                  if (transaction.category != null)
+                    CategoryLabel(category: transaction.category),
                 ],
               ),
               const SizedBox(height: 8),
@@ -159,8 +148,30 @@ class TransactionDialog extends StatelessWidget {
                 alignment: Alignment.topLeft,
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 8),
-                  child: Text(description ?? "No description"),
+                  child: Text(transaction.description ?? "No description"),
                 ),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text("Close"),
+                  ),
+                  const SizedBox(width: 8),
+                  ElevatedButton(
+                    onPressed: () {
+                      Navigator.pop(context); // Close dialog first
+                      Navigator.pushNamed(
+                        context,
+                        AddTransactionPage.route,
+                        arguments: transaction,
+                      );
+                    },
+                    child: const Text("Edit"),
+                  ),
+                ],
               ),
             ],
           ),

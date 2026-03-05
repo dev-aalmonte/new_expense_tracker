@@ -68,6 +68,41 @@ class TransactionsProvider with ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> editTransaction(
+    Transaction transaction,
+    Account activeAccount,
+  ) async {
+    var transactionObject = {
+      "type": transaction.type.index,
+      "amount": transaction.amount,
+      "account_id": transaction.account.id,
+      "date": transaction.date.toIso8601String(),
+      "description": transaction.description,
+    };
+
+    if (transaction.type == TransactionType.spent) {
+      transactionObject['category'] = transaction.category!.index;
+    } else {
+      transactionObject['category'] = null;
+    }
+
+    await DBHelper.update(
+      'transactions',
+      transactionObject,
+      DBWhere(
+        column: 'id',
+        operation: WhereOperation.equal,
+        value: transaction.id,
+      ),
+    );
+
+    int index = transactions.indexWhere((t) => t.id == transaction.id);
+    if (index != -1) {
+      transactions[index] = transaction;
+      notifyListeners();
+    }
+  }
+
   Future<void> fetchTransactions(
     Account activeAccount, {
     DateTimeRange? dateRange,

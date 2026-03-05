@@ -149,11 +149,7 @@ class _HomePageState extends State<HomePage> {
                             ? 4
                             : transactionsSummary.length,
                         itemBuilder: (context, index) => _recentTransactions(
-                          transactionType: transactionsSummary[index].type,
-                          category: transactionsSummary[index].category,
-                          amount: transactionsSummary[index].amount,
-                          date: transactionsSummary[index].date,
-                          description: transactionsSummary[index].description,
+                          transaction: transactionsSummary[index],
                         ),
                       ),
               ),
@@ -237,10 +233,6 @@ class _HomePageState extends State<HomePage> {
                 ),
               ],
             ),
-            // child: Padding(
-            //   padding:
-            //       const EdgeInsets.symmetric(horizontal: 16.0, vertical: 32.0),
-            //   child: _noDataWidget(context),
           ),
         ),
       );
@@ -325,21 +317,7 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Card _recentTransactions({
-    required TransactionType transactionType,
-    required double amount,
-    required DateTime date,
-    Categories? category,
-    String? description,
-  }) {
-    return Card(
-      child: TransactionTile(
-        transactionType: transactionType,
-        category: category,
-        amount: amount,
-        date: date,
-        description: description,
-      ),
-    );
+  Card _recentTransactions({required Transaction transaction}) {
+    return Card(child: TransactionTile(transaction: transaction));
   }
 }
