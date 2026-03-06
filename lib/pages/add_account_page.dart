@@ -33,43 +33,41 @@ class _AddAccountPageState extends State<AddAccountPage> {
     return Scaffold(
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 36),
-        child: Expanded(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Align(
-                alignment: Alignment.topLeft,
-                child: Text(
-                  "Create an Account",
-                  style: Theme.of(
-                    context,
-                  ).textTheme.headlineMedium!.copyWith(color: Colors.black),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Align(
+              alignment: Alignment.topLeft,
+              child: Text(
+                "Create an Account",
+                style: Theme.of(
+                  context,
+                ).textTheme.headlineMedium!.copyWith(color: Colors.black),
+              ),
+            ),
+            const SizedBox(height: 32),
+            TextField(
+              controller: _accountNameController,
+              decoration: const InputDecoration(labelText: "Account Name"),
+            ),
+            const SizedBox(height: 32),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                  child: const Text("Cancel"),
                 ),
-              ),
-              const SizedBox(height: 32),
-              TextField(
-                controller: _accountNameController,
-                decoration: const InputDecoration(labelText: "Account Name"),
-              ),
-              const SizedBox(height: 32),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  TextButton(
-                    onPressed: () {
-                      Navigator.of(context).pop();
-                    },
-                    child: const Text("Cancel"),
-                  ),
-                  const SizedBox(width: 12),
-                  ElevatedButton(
-                    onPressed: _submitForm,
-                    child: const Text("Add"),
-                  ),
-                ],
-              ),
-            ],
-          ),
+                const SizedBox(width: 12),
+                ElevatedButton(
+                  onPressed: _submitForm,
+                  child: const Text("Add"),
+                ),
+              ],
+            ),
+          ],
         ),
       ),
     );
