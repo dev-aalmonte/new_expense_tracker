@@ -140,10 +140,22 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
                         : "Add New Transaction",
                     style: Theme.of(context).textTheme.titleLarge,
                   ),
-                  _depositExpenseSelectorWidget(context),
                 ],
               ),
-              CurrencyFormField(controller: _amountController),
+              const SizedBox(height: 16),
+              Stack(
+                children: [
+                  Align(
+                    alignment: Alignment.topCenter,
+                    child: _depositExpenseSelectorWidget(context),
+                  ),
+                  Align(
+                    heightFactor: 1.05,
+                    alignment: Alignment.bottomCenter,
+                    child: CurrencyFormField(controller: _amountController),
+                  ),
+                ],
+              ),
               Row(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [

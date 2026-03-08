@@ -37,24 +37,25 @@ class _CurrencyFormFieldState extends State<CurrencyFormField> {
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 30),
       child: AutoSizeTextField(
         controller: widget.controller,
-        keyboardType:
-            const TextInputType.numberWithOptions(decimal: true, signed: false),
+        keyboardType: const TextInputType.numberWithOptions(
+          decimal: true,
+          signed: false,
+        ),
         inputFormatters: [MyCurrencyInputFormatter()],
         fullwidth: true,
         minFontSize: 32,
         maxLines: 1,
         textAlign: TextAlign.center,
         textDirection: TextDirection.rtl, // Right to left
-        style: Theme.of(context).textTheme.displayLarge!.copyWith(
-              fontSize: 62,
-            ),
+        style: Theme.of(context).textTheme.displayLarge!.copyWith(fontSize: 62),
         decoration: InputDecoration(
-            border: InputBorder.none,
-            prefixIcon: Icon(
-              Icons.attach_money,
-              size: Theme.of(context).textTheme.displayMedium!.fontSize,
-            ),
-            contentPadding: const EdgeInsets.all(20)),
+          border: InputBorder.none,
+          prefixIcon: Icon(
+            Icons.attach_money,
+            size: Theme.of(context).textTheme.displayMedium!.fontSize,
+          ),
+          contentPadding: const EdgeInsets.all(20),
+        ),
         onTap: _moveCursorToEnd,
       ),
     );
@@ -64,7 +65,9 @@ class _CurrencyFormFieldState extends State<CurrencyFormField> {
 class MyCurrencyInputFormatter extends TextInputFormatter {
   @override
   TextEditingValue formatEditUpdate(
-      TextEditingValue oldValue, TextEditingValue newValue) {
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
     String newText = newValue.text.replaceAll(".", "");
     double numericValue = double.tryParse(newText) ?? 0.0;
     String formattedValue = (numericValue / 100).toStringAsFixed(2);
