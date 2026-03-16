@@ -20,6 +20,7 @@ class TransactionsProvider with ChangeNotifier {
 
   List<Transaction> transactions = [];
   List<Transaction> transactionsSummary = [];
+  List<Categories> categoryList = Categories.values;
 
   Future<void> deleteData() async {
     await DBHelper.clearData();

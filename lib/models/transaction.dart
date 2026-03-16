@@ -1,5 +1,6 @@
-import 'package:new_expense_tracker/models/account.dart';
 import 'package:flutter/material.dart';
+import 'package:new_expense_tracker/models/account.dart';
+import 'package:new_expense_tracker/models/category.dart';
 
 enum TransactionType { deposit, spent }
 

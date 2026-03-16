@@ -1,7 +1,10 @@
+import 'package:flex_color_picker/flex_color_picker.dart';
 import 'package:new_expense_tracker/models/account.dart';
+import 'package:new_expense_tracker/models/category.dart';
 import 'package:new_expense_tracker/models/transaction.dart';
 import 'package:new_expense_tracker/providers/account_provider.dart';
 import 'package:new_expense_tracker/providers/transactions_provider.dart';
+import 'package:new_expense_tracker/widgets/color_picker_field.dart';
 import 'package:new_expense_tracker/widgets/currency_form_field.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -23,33 +26,47 @@ class AddTransactionPage extends StatefulWidget {
 }
 
 class _AddTransactionPageState extends State<AddTransactionPage> {
+  // Form Input Controllers
   final _amountController = TextEditingController();
   final _dateController = TextEditingController();
   final _descriptionController = TextEditingController();
+  final _categoryController = TextEditingController();
+  final ValueNotifier<Color> _categoryColorNotifier = ValueNotifier<Color>(
+    Colors.red,
+  );
+
   late final Account _activeAccount;
   late Transaction? transactionToEdit;
+  late DateTime _actualDate;
+  late FocusNode _categoryFocusNode;
 
   final DateTime _today = DateTime.now();
-  late DateTime _actualDate;
   bool _isDeposit = true;
-  String category = Categories.bill.toShortString();
+  Categories? category;
 
   @override
   void initState() {
     super.initState();
 
+    _categoryFocusNode = FocusNode(debugLabel: 'Category Autocomplete');
+
     transactionToEdit = widget.transactionToEdit;
     if (transactionToEdit != null) {
       _isDeposit = transactionToEdit!.type == TransactionType.deposit;
-      category = !_isDeposit
-          ? transactionToEdit!.category!.toShortString()
-          : Categories.bill.toShortString();
       _amountController.text = transactionToEdit!.amount.toStringAsFixed(2);
       _dateController.text = DateFormat(
         'M/d/y',
       ).format(transactionToEdit!.date);
       _descriptionController.text = transactionToEdit!.description ?? "";
       _actualDate = transactionToEdit!.date;
+
+      if (transactionToEdit!.type == TransactionType.spent) {
+        category = transactionToEdit!.category;
+        _categoryController.text = category!.toShortString();
+        _categoryColorNotifier.value = Categories.categoryColors(
+          category!,
+        )!.withAlpha(255);
+      }
     } else {
       _actualDate = _today;
       _dateController.text = DateFormat('M/d/y').format(_today);
@@ -66,13 +83,17 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
 
   void _submitForm() {
     FocusManager.instance.primaryFocus?.unfocus();
+    debugPrint("Category: ${_categoryController.text}");
+    debugPrint(
+      "Color: ${ColorTools.materialNameAndCode(_categoryColorNotifier.value)}",
+    );
     final Transaction transaction = Transaction(
       type: _isDeposit ? TransactionType.deposit : TransactionType.spent,
-      category: Categories.fromName(category.toLowerCase()),
       amount: double.parse(_amountController.text),
       account: _activeAccount,
       date: DateFormat('M/d/y').parse(_dateController.text),
       description: _descriptionController.text,
+      category: category,
     );
 
     if (transaction.amount <= 0.00) {
@@ -160,21 +181,71 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   if (!_isDeposit) ...[
-                    _selectCategoryWidget(),
-                    const SizedBox(width: 24),
-                  ],
-                  Expanded(
-                    child: TextField(
-                      onTap: () {
-                        _selectDate();
-                      },
-                      controller: _dateController,
-                      readOnly: true,
-                      decoration: const InputDecoration(labelText: 'Date'),
-                      style: const TextStyle(fontSize: 18),
+                    // _selectCategoryWidget(),
+                    Expanded(
+                      child: Autocomplete<Categories>(
+                        textEditingController: _categoryController,
+                        focusNode: _categoryFocusNode,
+                        displayStringForOption: (Categories category) =>
+                            category.toShortString(),
+                        optionsBuilder: (TextEditingValue textEditingValue) {
+                          if (textEditingValue.text == '') {
+                            return const Iterable<Categories>.empty();
+                          }
+                          return Categories.values.where((Categories category) {
+                            return category
+                                .toShortString()
+                                .toLowerCase()
+                                .contains(textEditingValue.text.toLowerCase());
+                          });
+                        },
+                        fieldViewBuilder:
+                            (
+                              BuildContext context,
+                              TextEditingController textEditingController,
+                              FocusNode focusNode,
+                              VoidCallback onFieldSubmitted,
+                            ) {
+                              return TextField(
+                                controller: textEditingController,
+                                focusNode: focusNode,
+                                decoration: const InputDecoration(
+                                  labelText: 'Category',
+                                  isDense: true,
+                                ),
+                                onSubmitted: (String value) {
+                                  debugPrint('String submitted: $value');
+                                  onFieldSubmitted();
+                                },
+                              );
+                            },
+                        onSelected: (Categories category) {
+                          this.category = category;
+                          setState(() {
+                            _categoryColorNotifier.value =
+                                Categories.categoryColors(
+                                  category,
+                                )!.withAlpha(255);
+                          });
+                          debugPrint(
+                            'Category Selected: ${category.toShortString()}',
+                          );
+                        },
+                      ),
                     ),
-                  ),
+                    SizedBox(width: 16),
+                    ColorPickerField(colorNotifier: _categoryColorNotifier),
+                  ],
                 ],
+              ),
+              TextField(
+                onTap: () {
+                  _selectDate();
+                },
+                controller: _dateController,
+                readOnly: true,
+                decoration: const InputDecoration(labelText: 'Date'),
+                style: const TextStyle(fontSize: 18),
               ),
               TextField(
                 controller: _descriptionController,
@@ -238,58 +309,59 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
     );
   }
 
-  Widget _selectCategoryWidget() {
-    final colorScheme = Theme.of(context).colorScheme;
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: colorScheme.secondaryContainer,
-        borderRadius: BorderRadius.circular(50),
-        boxShadow: [
-          BoxShadow(
-            color: colorScheme.shadow.withAlpha(26),
-            spreadRadius: 1,
-            blurRadius: 1,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Padding(
-        padding: const EdgeInsets.only(left: 20, right: 20),
-        child: DropdownButton(
-          value: category,
-          onChanged: (value) {
-            setState(() {
-              category = value!;
-            });
-          },
-          style: TextStyle(
-            color: colorScheme.primary,
-            fontWeight: FontWeight.w500,
-            fontSize: 16,
-          ),
-          dropdownColor: colorScheme.secondaryContainer,
-          icon: const SizedBox(),
-          underline: const SizedBox(),
-          items: Categories.values.map<DropdownMenuItem<String>>((value) {
-            return DropdownMenuItem<String>(
-              value: value.toShortString(),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  CircleAvatar(
-                    backgroundColor: Categories.categoryColors(value),
-                    radius: 10,
-                  ),
-                  const SizedBox(width: 16),
-                  Text(value.toShortString()),
-                ],
-              ),
-            );
-          }).toList(),
-        ),
-      ),
-    );
-  }
+  // Widget _selectCategoryWidget() {
+  //   final colorScheme = Theme.of(context).colorScheme;
+  //   return DecoratedBox(
+  //     decoration: BoxDecoration(
+  //       color: colorScheme.surfaceContainerLow,
+  //       borderRadius: BorderRadius.circular(50),
+  //       boxShadow: [
+  //         BoxShadow(
+  //           color: colorScheme.shadow.withAlpha(26),
+  //           spreadRadius: 1,
+  //           blurRadius: 1,
+  //           offset: const Offset(0, 1),
+  //         ),
+  //       ],
+  //     ),
+  //     child: Padding(
+  //       padding: const EdgeInsets.only(left: 20, right: 20),
+  //       child: DropdownButton(
+  //         value: category,
+  //         onChanged: (value) {
+  //           setState(() {
+  //             category = value!;
+  //           });
+  //         },
+  //         style: TextStyle(
+  //           color: colorScheme.secondary,
+  //           fontWeight: FontWeight.w600,
+  //           fontSize: 16,
+  //         ),
+  //         dropdownColor: colorScheme.surfaceContainerLow,
+  //         icon: const SizedBox(), // used to no show any Dropdown Icon
+  //         underline:
+  //             const SizedBox(), // used to no show any underline in the dropdown
+  //         items: Categories.values.map<DropdownMenuItem<String>>((value) {
+  //           return DropdownMenuItem<String>(
+  //             value: value.toShortString(),
+  //             child: Row(
+  //               mainAxisSize: MainAxisSize.min,
+  //               children: [
+  //                 CircleAvatar(
+  //                   backgroundColor: Categories.categoryColors(value),
+  //                   radius: 10,
+  //                 ),
+  //                 const SizedBox(width: 16),
+  //                 Text(value.toShortString()),
+  //               ],
+  //             ),
+  //           );
+  //         }).toList(),
+  //       ),
+  //     ),
+  //   );
+  // }
 
   @override
   void dispose() {

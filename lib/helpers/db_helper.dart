@@ -9,31 +9,51 @@ class DBHelper {
     final dbPath = await sql.getDatabasesPath();
     return sql.openDatabase(
       path.join(dbPath, 'expenses.db'),
-      onCreate: (db, version) {
-        db.execute("""CREATE TABLE transactions(
-                                  id INTEGER PRIMARY KEY NOT NULL,
-                                  account_id INTEGER NOT NULL,
-                                  type INTEGER NOT NULL,
-                                  amount REAL NOT NULL,
-                                  date TEXT NOT NULL,
-                                  category INTEGER,
-                                  description TEXT)
+      onUpgrade: (db, oldv, newv) {
+        // Transaction table
+        db.execute("""CREATE TABLE IF NOT EXISTS transactions(
+          id INTEGER PRIMARY KEY NOT NULL,
+          account_id INTEGER NOT NULL,
+          type INTEGER NOT NULL,
+          amount REAL NOT NULL,
+          date TEXT NOT NULL,
+          category INTEGER,
+          description TEXT)
         """);
-        db.execute("""CREATE TABLE user_card(
-                                  id INTEGER PRIMARY KEY NOT NULL,
-                                  total REAL NOT NULL,
-                                  spent REAL NOT NULL)
+
+        // User table
+        db.execute("""CREATE TABLE IF NOT EXISTS user_card(
+          id INTEGER PRIMARY KEY NOT NULL,
+          total REAL NOT NULL,
+          spent REAL NOT NULL)
         """);
-        db.execute("""CREATE TABLE accounts(
-                                  id INTEGER PRIMARY KEY NOT NULL,
-                                  name TEXT NOT NULL,
-                                  acc_number TEXT NOT NULL UNIQUE,
-                                  available REAL NOT NULL,
-                                  spent REAL NOT NULL)
+
+        // Account Table
+        db.execute("""CREATE TABLE IF NOT EXISTS accounts(
+          id INTEGER PRIMARY KEY NOT NULL,
+          name TEXT NOT NULL,
+          acc_number TEXT NOT NULL UNIQUE,
+          available REAL NOT NULL,
+          spent REAL NOT NULL)
+        """);
+
+        // Categories Table
+        db.execute("""CREATE TABLE IF NOT EXISTS categories(
+          id INTEGER PRIMARY KEY NOT NULL,
+          color TEXT NOT NULL,
+          name TEXT NOT NULL)
         """);
       },
-      version: 4,
+      version: 7,
     );
+  }
+
+  static bool table_exists(Database db, String table) {
+    bool result = false;
+    db
+        .query('sqlite_master', where: 'name = ?', whereArgs: [table])
+        .then((value) => result = value.isNotEmpty);
+    return result;
   }
 
   static Future<int> insert(String table, Map<String, dynamic> data) async {
