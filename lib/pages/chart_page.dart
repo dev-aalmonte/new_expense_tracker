@@ -1,6 +1,5 @@
 import 'package:jiffy/jiffy.dart';
 import 'package:new_expense_tracker/models/category.dart';
-import 'package:new_expense_tracker/models/transaction.dart';
 import 'package:new_expense_tracker/providers/transactions_provider.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';

@@ -48,7 +48,7 @@ class DBHelper {
     );
   }
 
-  static bool table_exists(Database db, String table) {
+  static bool tableExists(Database db, String table) {
     bool result = false;
     db
         .query('sqlite_master', where: 'name = ?', whereArgs: [table])

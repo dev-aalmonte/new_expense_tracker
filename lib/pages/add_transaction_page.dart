@@ -1,4 +1,3 @@
-import 'package:flex_color_picker/flex_color_picker.dart';
 import 'package:new_expense_tracker/models/account.dart';
 import 'package:new_expense_tracker/models/category.dart';
 import 'package:new_expense_tracker/models/transaction.dart';
@@ -26,6 +25,9 @@ class AddTransactionPage extends StatefulWidget {
 }
 
 class _AddTransactionPageState extends State<AddTransactionPage> {
+  // Providers
+  late TransactionsProvider transactionsProvider;
+
   // Form Input Controllers
   final _amountController = TextEditingController();
   final _dateController = TextEditingController();
@@ -49,20 +51,20 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
   void initState() {
     super.initState();
 
+    transactionsProvider = Provider.of<TransactionsProvider>(
+      context,
+      listen: false,
+    );
+
     _categoryFocusNode = FocusNode(debugLabel: 'Category Autocomplete');
     _categoryFocusNode.addListener(() {
       if (!_categoryFocusNode.hasFocus) {
         // When lose focus, check if name exist in the category List
         final String currentCategoryText = _categoryController.text;
-        final bool categoryExists =
-            Provider.of<TransactionsProvider>(
-              context,
-              listen: false,
-            ).categoryList.any(
-              (category) =>
-                  category.name.toLowerCase() ==
-                  currentCategoryText.toLowerCase(),
-            );
+        final bool categoryExists = transactionsProvider.categoryList.any(
+          (category) =>
+              category.name.toLowerCase() == currentCategoryText.toLowerCase(),
+        );
 
         if (!categoryExists) {
           category = null;
@@ -129,36 +131,34 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
     }
 
     if (transaction.amount <= 0.00) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          backgroundColor: Colors.red,
-          content: const Text("Transaction should have amount"),
-          action: SnackBarAction(
-            textColor: Colors.white,
-            label: 'Ok',
-            onPressed: () =>
-                ScaffoldMessenger.of(context).hideCurrentSnackBar(),
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: Colors.red,
+            content: const Text("Transaction should have amount"),
+            action: SnackBarAction(
+              textColor: Colors.white,
+              label: 'Ok',
+              onPressed: () =>
+                  ScaffoldMessenger.of(context).hideCurrentSnackBar(),
+            ),
           ),
-        ),
-      );
+        );
+      }
     } else {
       if (transactionToEdit != null) {
         transaction.id = transactionToEdit!.id;
-        Provider.of<TransactionsProvider>(
-          context,
-          listen: false,
-        ).editTransaction(transaction, _activeAccount);
+        transactionsProvider.editTransaction(transaction, _activeAccount);
       } else {
-        Provider.of<TransactionsProvider>(
-          context,
-          listen: false,
-        ).addTransaction(transaction, _activeAccount);
+        transactionsProvider.addTransaction(transaction, _activeAccount);
       }
 
       if (widget.changePage != null) {
         widget.changePage!();
       } else {
-        Navigator.pop(context);
+        if (mounted) {
+          Navigator.pop(context);
+        }
       }
     }
   }

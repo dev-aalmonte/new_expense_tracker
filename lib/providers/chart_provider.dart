@@ -12,7 +12,7 @@ class ChartProvider with ChangeNotifier {
   }
 
   double totalPieChartValue = 0;
-  List<PieChartSectionData> _categoryChart = [];
+  final List<PieChartSectionData> _categoryChart = [];
   List<PieChartSectionData> get categoryChart {
     return [..._categoryChart];
   }

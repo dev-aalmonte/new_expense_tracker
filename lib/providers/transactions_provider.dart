@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:math';
 
-import 'package:flex_color_picker/flex_color_picker.dart';
 import 'package:new_expense_tracker/helpers/date_helper.dart';
 import 'package:new_expense_tracker/helpers/db_helper.dart';
 import 'package:new_expense_tracker/models/account.dart';
@@ -191,7 +190,6 @@ class TransactionsProvider with ChangeNotifier {
     ]);
 
     // Convert the fetched data into a list of Transaction objects
-    // TODO: Fetch Category Based on ID
     for (var item in dataList) {
       transactions.add(
         Transaction(
