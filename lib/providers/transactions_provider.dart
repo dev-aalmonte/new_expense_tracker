@@ -345,7 +345,7 @@ class TransactionsProvider with ChangeNotifier {
       double spent = 0;
 
       for (var transaction in weeklyTransactions) {
-        if (transaction.category == null) {
+        if (transaction.type == TransactionType.deposit) {
           deposit += transaction.amount;
         } else {
           spent += transaction.amount;
