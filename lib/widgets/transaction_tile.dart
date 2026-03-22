@@ -1,3 +1,4 @@
+import 'package:new_expense_tracker/models/category.dart';
 import 'package:new_expense_tracker/models/transaction.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_multi_formatter/flutter_multi_formatter.dart';
@@ -90,7 +91,7 @@ class TransactionTile extends StatelessWidget {
                         top: 5,
                         bottom: 5,
                       ),
-                      child: CategoryLabel(category: transaction.category),
+                      child: CategoryLabel(category: transaction.category!),
                     )
                   : null,
             ),
@@ -103,28 +104,24 @@ class TransactionTile extends StatelessWidget {
 }
 
 class CategoryLabel extends StatelessWidget {
+  final Category category;
   const CategoryLabel({super.key, required this.category});
-
-  final Categories? category;
 
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: Categories.categoryColors(category!)?.withAlpha(50),
+        color: category.color.withAlpha(50),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          CircleAvatar(
-            backgroundColor: Categories.categoryColors(category!),
-            radius: 8,
-          ),
+          CircleAvatar(backgroundColor: category.color, radius: 8),
           const SizedBox(width: 12),
           Text(
-            category!.toShortString(),
+            category.name,
             style: Theme.of(context).textTheme.labelLarge!.copyWith(
               fontWeight: FontWeight.bold,
               letterSpacing: .5,

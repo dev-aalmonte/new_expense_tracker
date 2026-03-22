@@ -39,16 +39,21 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
   late Transaction? transactionToEdit;
   late DateTime _actualDate;
   late FocusNode _categoryFocusNode;
+  late Future<void> _fetchFuture;
 
   final DateTime _today = DateTime.now();
   bool _isDeposit = true;
-  Categories? category;
+  Category? category;
 
   @override
   void initState() {
     super.initState();
 
     _categoryFocusNode = FocusNode(debugLabel: 'Category Autocomplete');
+    _fetchFuture = Provider.of<TransactionsProvider>(
+      context,
+      listen: false,
+    ).fetchCategories();
 
     transactionToEdit = widget.transactionToEdit;
     if (transactionToEdit != null) {
@@ -62,10 +67,6 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
 
       if (transactionToEdit!.type == TransactionType.spent) {
         category = transactionToEdit!.category;
-        _categoryController.text = category!.toShortString();
-        _categoryColorNotifier.value = Categories.categoryColors(
-          category!,
-        )!.withAlpha(255);
       }
     } else {
       _actualDate = _today;
@@ -81,12 +82,9 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
     ).activeAccount!;
   }
 
-  void _submitForm() {
+  Future<void> _submitForm() async {
     FocusManager.instance.primaryFocus?.unfocus();
-    debugPrint("Category: ${_categoryController.text}");
-    debugPrint(
-      "Color: ${ColorTools.materialNameAndCode(_categoryColorNotifier.value)}",
-    );
+
     final Transaction transaction = Transaction(
       type: _isDeposit ? TransactionType.deposit : TransactionType.spent,
       amount: double.parse(_amountController.text),
@@ -95,6 +93,19 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
       description: _descriptionController.text,
       category: category,
     );
+
+    if (category == null && transaction.type == TransactionType.spent) {
+      debugPrint("Creating a category");
+      category = Category(
+        color: _categoryColorNotifier.value,
+        name: _categoryController.text,
+      );
+      await Provider.of<TransactionsProvider>(
+        context,
+        listen: false,
+      ).addCategory(category!);
+      transaction.category = category;
+    }
 
     if (transaction.amount <= 0.00) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -144,140 +155,152 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 40),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                crossAxisAlignment: CrossAxisAlignment.center,
+    return FutureBuilder(
+      future: _fetchFuture,
+      builder: (context, asyncSnapshot) {
+        return Scaffold(
+          body: SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 40),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text(
-                    transactionToEdit != null
-                        ? "Edit Transaction"
-                        : "Add New Transaction",
-                    style: Theme.of(context).textTheme.titleLarge,
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              Stack(
-                children: [
-                  Align(
-                    alignment: Alignment.topCenter,
-                    child: _depositExpenseSelectorWidget(context),
-                  ),
-                  Align(
-                    heightFactor: 1.05,
-                    alignment: Alignment.bottomCenter,
-                    child: CurrencyFormField(controller: _amountController),
-                  ),
-                ],
-              ),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  if (!_isDeposit) ...[
-                    // _selectCategoryWidget(),
-                    Expanded(
-                      child: Autocomplete<Categories>(
-                        textEditingController: _categoryController,
-                        focusNode: _categoryFocusNode,
-                        displayStringForOption: (Categories category) =>
-                            category.toShortString(),
-                        optionsBuilder: (TextEditingValue textEditingValue) {
-                          if (textEditingValue.text == '') {
-                            return const Iterable<Categories>.empty();
-                          }
-                          return Categories.values.where((Categories category) {
-                            return category
-                                .toShortString()
-                                .toLowerCase()
-                                .contains(textEditingValue.text.toLowerCase());
-                          });
-                        },
-                        fieldViewBuilder:
-                            (
-                              BuildContext context,
-                              TextEditingController textEditingController,
-                              FocusNode focusNode,
-                              VoidCallback onFieldSubmitted,
-                            ) {
-                              return TextField(
-                                controller: textEditingController,
-                                focusNode: focusNode,
-                                decoration: const InputDecoration(
-                                  labelText: 'Category',
-                                  isDense: true,
-                                ),
-                                onSubmitted: (String value) {
-                                  debugPrint('String submitted: $value');
-                                  onFieldSubmitted();
-                                },
-                              );
-                            },
-                        onSelected: (Categories category) {
-                          this.category = category;
-                          setState(() {
-                            _categoryColorNotifier.value =
-                                Categories.categoryColors(
-                                  category,
-                                )!.withAlpha(255);
-                          });
-                          debugPrint(
-                            'Category Selected: ${category.toShortString()}',
-                          );
-                        },
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Text(
+                        transactionToEdit != null
+                            ? "Edit Transaction"
+                            : "Add New Transaction",
+                        style: Theme.of(context).textTheme.titleLarge,
                       ),
-                    ),
-                    SizedBox(width: 16),
-                    ColorPickerField(colorNotifier: _categoryColorNotifier),
-                  ],
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  Stack(
+                    children: [
+                      Align(
+                        alignment: Alignment.topCenter,
+                        child: _depositExpenseSelectorWidget(context),
+                      ),
+                      Align(
+                        heightFactor: 1.05,
+                        alignment: Alignment.bottomCenter,
+                        child: CurrencyFormField(controller: _amountController),
+                      ),
+                    ],
+                  ),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      if (!_isDeposit) ...[
+                        // _selectCategoryWidget(),
+                        Expanded(
+                          child: Autocomplete<Category>(
+                            textEditingController: _categoryController,
+                            focusNode: _categoryFocusNode,
+                            displayStringForOption: (Category category) =>
+                                category.name,
+                            optionsBuilder: (TextEditingValue textEditingValue) {
+                              if (textEditingValue.text == '') {
+                                return const Iterable<Category>.empty();
+                              }
+                              // TODO: Fetch existing categories from the database
+
+                              return Provider.of<TransactionsProvider>(
+                                context,
+                                listen: false,
+                              ).categoryList.where(
+                                (category) =>
+                                    category.name.toLowerCase().contains(
+                                      textEditingValue.text.toLowerCase(),
+                                    ),
+                              );
+
+                              // return Category.values.where((Category category) {
+                              //   return category
+                              //       .toShortString()
+                              //       .toLowerCase()
+                              //       .contains(textEditingValue.text.toLowerCase());
+                              // });
+                            },
+                            fieldViewBuilder:
+                                (
+                                  BuildContext context,
+                                  TextEditingController textEditingController,
+                                  FocusNode focusNode,
+                                  VoidCallback onFieldSubmitted,
+                                ) {
+                                  return TextField(
+                                    controller: textEditingController,
+                                    focusNode: focusNode,
+                                    decoration: const InputDecoration(
+                                      labelText: 'Category',
+                                      isDense: true,
+                                    ),
+                                    onSubmitted: (String value) {
+                                      debugPrint('String submitted: $value');
+                                      onFieldSubmitted();
+                                    },
+                                  );
+                                },
+                            onSelected: (Category category) {
+                              this.category = category;
+                              setState(() {
+                                _categoryColorNotifier.value = category.color;
+                              });
+                              debugPrint('Category Selected: ${category.name}');
+                            },
+                          ),
+                        ),
+                        SizedBox(width: 16),
+                        ColorPickerField(colorNotifier: _categoryColorNotifier),
+                      ],
+                    ],
+                  ),
+                  TextField(
+                    onTap: () {
+                      _selectDate();
+                    },
+                    controller: _dateController,
+                    readOnly: true,
+                    decoration: const InputDecoration(labelText: 'Date'),
+                    style: const TextStyle(fontSize: 18),
+                  ),
+                  TextField(
+                    controller: _descriptionController,
+                    maxLines: 3,
+                    decoration: const InputDecoration(labelText: 'Description'),
+                    style: const TextStyle(fontSize: 18),
+                  ),
+                  const SizedBox(height: 24),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                        child: TextButton(
+                          onPressed: () {
+                            Navigator.of(context).pop();
+                          },
+                          child: const Text("Cancel"),
+                        ),
+                      ),
+                      ElevatedButton(
+                        onPressed: _submitForm,
+                        child: transactionToEdit != null
+                            ? const Text('Save Changes')
+                            : const Text('Add Transaction'),
+                      ),
+                    ],
+                  ),
                 ],
               ),
-              TextField(
-                onTap: () {
-                  _selectDate();
-                },
-                controller: _dateController,
-                readOnly: true,
-                decoration: const InputDecoration(labelText: 'Date'),
-                style: const TextStyle(fontSize: 18),
-              ),
-              TextField(
-                controller: _descriptionController,
-                maxLines: 3,
-                decoration: const InputDecoration(labelText: 'Description'),
-                style: const TextStyle(fontSize: 18),
-              ),
-              const SizedBox(height: 24),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                    child: TextButton(
-                      onPressed: () {
-                        Navigator.of(context).pop();
-                      },
-                      child: const Text("Cancel"),
-                    ),
-                  ),
-                  ElevatedButton(
-                    onPressed: _submitForm,
-                    child: transactionToEdit != null
-                        ? const Text('Save Changes')
-                        : const Text('Add Transaction'),
-                  ),
-                ],
-              ),
-            ],
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 

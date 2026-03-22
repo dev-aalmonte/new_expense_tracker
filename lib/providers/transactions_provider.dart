@@ -1,9 +1,11 @@
 import 'dart:async';
 import 'dart:math';
 
+import 'package:flex_color_picker/flex_color_picker.dart';
 import 'package:new_expense_tracker/helpers/date_helper.dart';
 import 'package:new_expense_tracker/helpers/db_helper.dart';
 import 'package:new_expense_tracker/models/account.dart';
+import 'package:new_expense_tracker/models/category.dart';
 import 'package:new_expense_tracker/models/db_where.dart';
 import 'package:new_expense_tracker/models/transaction.dart';
 import 'package:new_expense_tracker/providers/account_provider.dart';
@@ -20,7 +22,7 @@ class TransactionsProvider with ChangeNotifier {
 
   List<Transaction> transactions = [];
   List<Transaction> transactionsSummary = [];
-  List<Categories> categoryList = Categories.values;
+  List<Category> categoryList = [];
 
   Future<void> deleteData() async {
     await DBHelper.clearData();
@@ -37,8 +39,45 @@ class TransactionsProvider with ChangeNotifier {
 
     transactions = [];
     transactionsSummary = [];
+    categoryList = [];
   }
 
+  // Categories Functions
+  Future<void> fetchCategories() async {
+    categoryList = [];
+
+    final datalist = await DBHelper.getData('categories');
+
+    for (var item in datalist) {
+      categoryList.add(
+        Category(
+          id: item['id'],
+          color: Color(int.parse(item['color'])),
+          name: item['name'],
+        ),
+      );
+    }
+
+    debugPrint("Category List Length ${categoryList.length}");
+  }
+
+  Category? fetchCategoryById(int id) {
+    final filteredCategoryList = categoryList.where(
+      (category) => category.id == id,
+    );
+    return filteredCategoryList.isEmpty ? null : filteredCategoryList.first;
+  }
+
+  Future<void> addCategory(Category category) async {
+    var categoryObject = {
+      "color": category.color.toARGB32(),
+      "name": category.name,
+    };
+    category.id = await DBHelper.insert('categories', categoryObject);
+    categoryList.add(category);
+  }
+
+  // Transactions Functions
   Future<void> addTransaction(
     Transaction transaction,
     Account activeAccount,
@@ -54,7 +93,7 @@ class TransactionsProvider with ChangeNotifier {
 
     // If the transaction is an expense, include the category
     if (transaction.type == TransactionType.spent) {
-      transactionObject['category'] = transaction.category!.index;
+      transactionObject['category'] = transaction.category!.id;
     }
 
     // Add transaction to the database
@@ -82,7 +121,7 @@ class TransactionsProvider with ChangeNotifier {
     };
 
     if (transaction.type == TransactionType.spent) {
-      transactionObject['category'] = transaction.category!.index;
+      transactionObject['category'] = transaction.category!.id;
     } else {
       transactionObject['category'] = null;
     }
@@ -152,6 +191,7 @@ class TransactionsProvider with ChangeNotifier {
     ]);
 
     // Convert the fetched data into a list of Transaction objects
+    // TODO: Fetch Category Based on ID
     for (var item in dataList) {
       transactions.add(
         Transaction(
@@ -161,11 +201,12 @@ class TransactionsProvider with ChangeNotifier {
           amount: item['amount'],
           date: DateTime.parse(item['date']),
           category: item['category'] != null
-              ? Categories.values[item['category']]
+              ? fetchCategoryById(item['category'])
               : null,
           description: item['description'],
         ),
       );
+      debugPrint(item.toString());
     }
 
     this.transactions = transactions.reversed.toList();
@@ -173,6 +214,9 @@ class TransactionsProvider with ChangeNotifier {
     notifyListeners();
   }
 
+  @Deprecated(
+    'Use fetch summary instead, this function makes an extra call to grab values that are already loaded',
+  )
   Future<void> fetchTransactionSummary(Account activeAccount) async {
     DateTimeRange range = isMonthly
         ? DateHelper.getCurrentMonthRange()
@@ -257,6 +301,7 @@ class TransactionsProvider with ChangeNotifier {
     return groupedTransactions;
   }
 
+  // Chart Functions
   double getExpensesChartMaxValue() {
     final Map<String, dynamic> transactionChartDataByWeekYear =
         fetchTransactionsByWeekYear();
@@ -326,11 +371,11 @@ class TransactionsProvider with ChangeNotifier {
     };
   }
 
-  Map<Categories, double> getExpensesCategoryDataChart({
+  Map<Category, double> getExpensesCategoryDataChart({
     DateTimeRange? dateRange,
   }) {
     Map<String, dynamic> groupedTransactions = fetchTransactionsByWeekYear();
-    Map<Categories, double> expensesCategoryData = {};
+    Map<Category, double> expensesCategoryData = {};
     late int startWeekYear;
     late int endWeekYear;
     late int startYear;
