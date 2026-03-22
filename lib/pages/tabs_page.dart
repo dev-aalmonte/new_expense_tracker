@@ -39,7 +39,10 @@ class _TabsPageState extends State<TabsPage> {
       listen: false,
     ).activeAccount!;
 
-    _fetchFuture = transactionsProvider.fetchTransactions(activeAccount);
+    _fetchFuture = Future.wait([
+      transactionsProvider.fetchTransactions(activeAccount),
+      transactionsProvider.fetchCategories(),
+    ]);
   }
 
   @override

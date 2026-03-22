@@ -192,8 +192,12 @@ class TransactionDialog extends StatelessWidget {
               transaction.amount.toString(),
               leadingSymbol: CurrencySymbols.DOLLAR_SIGN,
             ),
-            style: Theme.of(context).textTheme.titleLarge,
+            style: Theme.of(context).textTheme.titleMedium,
           ),
+          if (transaction.category != null) ...[
+            Expanded(child: const SizedBox(width: 8)),
+            CategoryLabel(category: transaction.category!),
+          ],
         ],
       ),
       children: [
