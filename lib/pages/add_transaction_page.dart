@@ -50,6 +50,25 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
     super.initState();
 
     _categoryFocusNode = FocusNode(debugLabel: 'Category Autocomplete');
+    _categoryFocusNode.addListener(() {
+      if (!_categoryFocusNode.hasFocus) {
+        // When lose focus, check if name exist in the category List
+        final String currentCategoryText = _categoryController.text;
+        final bool categoryExists =
+            Provider.of<TransactionsProvider>(
+              context,
+              listen: false,
+            ).categoryList.any(
+              (category) =>
+                  category.name.toLowerCase() ==
+                  currentCategoryText.toLowerCase(),
+            );
+
+        if (!categoryExists) {
+          category = null;
+        }
+      }
+    });
     _fetchFuture = Provider.of<TransactionsProvider>(
       context,
       listen: false,
@@ -67,6 +86,8 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
 
       if (transactionToEdit!.type == TransactionType.spent) {
         category = transactionToEdit!.category;
+        _categoryController.text = transactionToEdit!.category!.name;
+        _categoryColorNotifier.value = transactionToEdit!.category!.color;
       }
     } else {
       _actualDate = _today;
@@ -206,8 +227,6 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
                               if (textEditingValue.text == '') {
                                 return const Iterable<Category>.empty();
                               }
-                              // TODO: Fetch existing categories from the database
-
                               return Provider.of<TransactionsProvider>(
                                 context,
                                 listen: false,
