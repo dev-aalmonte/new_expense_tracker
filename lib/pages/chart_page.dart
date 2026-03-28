@@ -1,5 +1,5 @@
 import 'package:jiffy/jiffy.dart';
-import 'package:new_expense_tracker/models/transaction.dart';
+import 'package:new_expense_tracker/models/category.dart';
 import 'package:new_expense_tracker/providers/transactions_provider.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
@@ -16,7 +16,7 @@ class ChartPage extends StatefulWidget {
 class _ChartPageState extends State<ChartPage> {
   late final TransactionsProvider transactionsProvider;
   late Map<String, dynamic> expensesChartData;
-  late Map<Categories, double> expensesCategoryChartData;
+  late Map<Category, double> expensesCategoryChartData;
   late double barChartYMax;
   late double pieChartValueSum;
 
@@ -74,15 +74,12 @@ class _ChartPageState extends State<ChartPage> {
   List<PieChartSectionData> loadCategoryChart() {
     final List<PieChartSectionData> categoryChartWidgetList = [];
     if (expensesCategoryChartData.isNotEmpty) {
-      expensesCategoryChartData.forEach((key, value) {
-        // double percentage = (value / max) * 100;
+      expensesCategoryChartData.forEach((category, value) {
         categoryChartWidgetList.add(
           PieChartSectionData(
-            // radius: 50,
             value: value,
-            color: Categories.categoryColors(key),
+            color: category.color,
             showTitle: false,
-            // title: "${percentage.toStringAsFixed(2)}%",
           ),
         );
       });
@@ -295,8 +292,8 @@ class _ChartPageState extends State<ChartPage> {
                             children: expensesCategoryChartData.keys
                                 .map(
                                   (category) => ChartLegend(
-                                    color: Categories.categoryColors(category)!,
-                                    label: category.toShortString(),
+                                    color: category.color,
+                                    label: category.name,
                                     value:
                                         "${((expensesCategoryChartData[category]! / pieChartValueSum) * 100).toStringAsFixed(2)}%",
                                   ),

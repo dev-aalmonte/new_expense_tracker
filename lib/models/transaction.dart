@@ -1,5 +1,6 @@
-import 'package:new_expense_tracker/models/account.dart';
 import 'package:flutter/material.dart';
+import 'package:new_expense_tracker/models/account.dart';
+import 'package:new_expense_tracker/models/category.dart';
 
 enum TransactionType { deposit, spent }
 
@@ -60,7 +61,7 @@ class Transaction {
   final TransactionType type;
   final double amount;
   final DateTime date;
-  Categories? category;
+  Category? category;
   final String? description;
 
   Transaction({

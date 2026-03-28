@@ -7,30 +7,53 @@ import 'package:sqflite/sqlite_api.dart';
 class DBHelper {
   static Future<Database> database() async {
     final dbPath = await sql.getDatabasesPath();
-    return sql.openDatabase(path.join(dbPath, 'expenses.db'),
-        onCreate: (db, version) {
-      db.execute("""CREATE TABLE transactions(
-                                  id INTEGER PRIMARY KEY NOT NULL,
-                                  account_id INTEGER NOT NULL,
-                                  type INTEGER NOT NULL,
-                                  amount REAL NOT NULL,
-                                  date TEXT NOT NULL,
-                                  category INTEGER,
-                                  description TEXT)
+    return sql.openDatabase(
+      path.join(dbPath, 'expenses.db'),
+      onUpgrade: (db, oldv, newv) {
+        // Transaction table
+        db.execute("""CREATE TABLE IF NOT EXISTS transactions(
+          id INTEGER PRIMARY KEY NOT NULL,
+          account_id INTEGER NOT NULL,
+          type INTEGER NOT NULL,
+          amount REAL NOT NULL,
+          date TEXT NOT NULL,
+          category INTEGER,
+          description TEXT)
         """);
-      db.execute("""CREATE TABLE user_card(
-                                  id INTEGER PRIMARY KEY NOT NULL,
-                                  total REAL NOT NULL,
-                                  spent REAL NOT NULL)
+
+        // User table
+        db.execute("""CREATE TABLE IF NOT EXISTS user_card(
+          id INTEGER PRIMARY KEY NOT NULL,
+          total REAL NOT NULL,
+          spent REAL NOT NULL)
         """);
-      db.execute("""CREATE TABLE accounts(
-                                  id INTEGER PRIMARY KEY NOT NULL,
-                                  name TEXT NOT NULL,
-                                  acc_number TEXT NOT NULL UNIQUE,
-                                  available REAL NOT NULL,
-                                  spent REAL NOT NULL)
+
+        // Account Table
+        db.execute("""CREATE TABLE IF NOT EXISTS accounts(
+          id INTEGER PRIMARY KEY NOT NULL,
+          name TEXT NOT NULL,
+          acc_number TEXT NOT NULL UNIQUE,
+          available REAL NOT NULL,
+          spent REAL NOT NULL)
         """);
-    }, version: 4);
+
+        // Categories Table
+        db.execute("""CREATE TABLE IF NOT EXISTS categories(
+          id INTEGER PRIMARY KEY NOT NULL,
+          color TEXT NOT NULL,
+          name TEXT NOT NULL)
+        """);
+      },
+      version: 7,
+    );
+  }
+
+  static bool tableExists(Database db, String table) {
+    bool result = false;
+    db
+        .query('sqlite_master', where: 'name = ?', whereArgs: [table])
+        .then((value) => result = value.isNotEmpty);
+    return result;
   }
 
   static Future<int> insert(String table, Map<String, dynamic> data) async {
@@ -39,10 +62,22 @@ class DBHelper {
   }
 
   static Future<int> update(
-      String table, Map<String, dynamic> values, DBWhere where) async {
+    String table,
+    Map<String, dynamic> values,
+    DBWhere where,
+  ) async {
     final db = await DBHelper.database();
-    return db.update(table, values,
-        where: where.toString(), whereArgs: [where.value]);
+    return db.update(
+      table,
+      values,
+      where: where.toString(),
+      whereArgs: [where.value],
+    );
+  }
+
+  static Future<int> delete(String table, DBWhere where) async {
+    final db = await DBHelper.database();
+    return db.delete(table, where: where.toString(), whereArgs: [where.value]);
   }
 
   static Future<List<Map<String, dynamic>>> getData(String table) async {
@@ -51,13 +86,18 @@ class DBHelper {
   }
 
   static Future<List<Map<String, dynamic>>> fetchWhere(
-      String table, String column, var value) async {
+    String table,
+    String column,
+    var value,
+  ) async {
     final db = await DBHelper.database();
     return db.query(table, where: '$column = ?', whereArgs: [value]);
   }
 
   static Future<List<Map<String, dynamic>>> fetchWhereMultiple(
-      String table, List<DBWhere> arguments) async {
+    String table,
+    List<DBWhere> arguments,
+  ) async {
     final db = await DBHelper.database();
     String where = '';
     List values = [];
@@ -80,7 +120,10 @@ class DBHelper {
   }
 
   static Future<List<Map<String, dynamic>>> fetchWhereBetween(
-      String table, String column, List range) async {
+    String table,
+    String column,
+    List range,
+  ) async {
     final db = await DBHelper.database();
     return db.query(table, where: '$column BETWEEN ? AND ?', whereArgs: range);
   }

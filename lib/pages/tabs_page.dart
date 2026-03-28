@@ -39,7 +39,10 @@ class _TabsPageState extends State<TabsPage> {
       listen: false,
     ).activeAccount!;
 
-    _fetchFuture = transactionsProvider.fetchTransactions(activeAccount);
+    _fetchFuture = Future.wait([
+      transactionsProvider.fetchTransactions(activeAccount),
+      transactionsProvider.fetchCategories(),
+    ]);
   }
 
   @override
@@ -97,8 +100,6 @@ class _TabsPageState extends State<TabsPage> {
                       ),
                       const Padding(
                         padding: EdgeInsets.symmetric(horizontal: 16),
-                        // TODO: Update chart page to solve crash issues
-                        // child: NotFoundPage(),
                         child: ChartPage(),
                       ),
                     ],

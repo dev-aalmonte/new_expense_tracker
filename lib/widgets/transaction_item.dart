@@ -109,10 +109,7 @@ class _TransactionItemState extends State<TransactionItem> {
               child: ListView.builder(
                 itemCount: transactions.length,
                 itemBuilder: (context, index) => TransactionTile(
-                  transactionType: transactions[index].type,
-                  category: transactions[index].category,
-                  amount: transactions[index].amount,
-                  date: transactions[index].date,
+                  transaction: transactions[index],
                   isLastItem: index == transactions.length - 1,
                 ),
               ),
