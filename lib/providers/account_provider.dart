@@ -1,9 +1,12 @@
-import 'package:new_expense_tracker/helpers/db_helper.dart';
+import 'package:new_expense_tracker/interface/i_db_helper.dart';
 import 'package:new_expense_tracker/models/account.dart';
 import 'package:new_expense_tracker/models/db_where.dart';
 import 'package:flutter/material.dart';
 
 class AccountProvider with ChangeNotifier {
+  final IDBHelper _db;
+  AccountProvider(this._db);
+
   List<Account> _accounts = [];
   List<Account> get accounts {
     return [..._accounts];
@@ -17,7 +20,7 @@ class AccountProvider with ChangeNotifier {
   }
 
   Future<void> fetchAccounts() async {
-    final dataList = await DBHelper.getData('accounts');
+    final dataList = await _db.fetch('accounts');
     _accounts = dataList
         .map(
           (item) => Account(
@@ -32,8 +35,8 @@ class AccountProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  static Future<Account> fetchAccountById(int accountId) async {
-    final data = await DBHelper.fetchWhere("accounts", "id", accountId);
+  Future<Account> fetchAccountById(int accountId) async {
+    final data = await _db.fetchWhere("accounts", "id", accountId);
     Account returnAccount = data
         .map(
           (item) => Account(
@@ -56,13 +59,14 @@ class AccountProvider with ChangeNotifier {
       "spent": account.spent,
     };
 
-    account.id = await DBHelper.insert('accounts', accountObject);
+    account.id = await _db.insert('accounts', accountObject);
     _accounts.add(account);
 
     notifyListeners();
   }
 
-  static Future<void> updateAccount(Account account) async {
+  // TODO: remove we do not update accounts information because available/spent columns are depricated
+  Future<void> updateAccount(Account account) async {
     var accountObject = {
       "id": account.id,
       "name": account.name,
@@ -71,7 +75,7 @@ class AccountProvider with ChangeNotifier {
       "spent": account.spent,
     };
 
-    await DBHelper.update(
+    await _db.update(
       'accounts',
       accountObject,
       DBWhere(column: 'id', operation: WhereOperation.equal, value: account.id),

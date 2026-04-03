@@ -1,9 +1,10 @@
+import 'package:new_expense_tracker/helpers/db_helper.dart';
 import 'package:new_expense_tracker/models/transaction.dart';
-import 'package:new_expense_tracker/pages/accounts_page.dart';
-import 'package:new_expense_tracker/pages/add_account_page.dart';
-import 'package:new_expense_tracker/pages/add_transaction_page.dart';
+import 'package:new_expense_tracker/pages/accounts/accounts_page.dart';
+import 'package:new_expense_tracker/pages/accounts/add_account_page.dart';
+import 'package:new_expense_tracker/pages/transactions/add_transaction_page.dart';
 // import 'package:new_expense_tracker/pages/splash_page.dart';
-import 'package:new_expense_tracker/pages/tabs_page.dart';
+import 'package:new_expense_tracker/pages/transactions/tabs_page.dart';
 import 'package:new_expense_tracker/providers/account_provider.dart';
 import 'package:new_expense_tracker/providers/chart_provider.dart';
 import 'package:new_expense_tracker/providers/transactions_provider.dart';
@@ -24,11 +25,11 @@ class MyApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider<TransactionsProvider>(
-          create: (_) => TransactionsProvider(),
+          create: (_) => TransactionsProvider(DBHelper()),
         ),
         ChangeNotifierProvider<ChartProvider>(create: (_) => ChartProvider()),
         ChangeNotifierProvider<AccountProvider>(
-          create: (_) => AccountProvider(),
+          create: (_) => AccountProvider(DBHelper()),
         ),
       ],
       child: MaterialApp(

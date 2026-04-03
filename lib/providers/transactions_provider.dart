@@ -2,16 +2,18 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:new_expense_tracker/helpers/date_helper.dart';
-import 'package:new_expense_tracker/helpers/db_helper.dart';
+import 'package:new_expense_tracker/interface/i_db_helper.dart';
 import 'package:new_expense_tracker/models/account.dart';
 import 'package:new_expense_tracker/models/category.dart';
 import 'package:new_expense_tracker/models/db_where.dart';
 import 'package:new_expense_tracker/models/transaction.dart';
-import 'package:new_expense_tracker/providers/account_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:jiffy/jiffy.dart';
 
 class TransactionsProvider with ChangeNotifier {
+  final IDBHelper _db;
+  TransactionsProvider(this._db);
+
   bool isDataLoaded = false;
   bool isMonthly = true;
   DateTimeRange selectedDateRange = DateTimeRange(
@@ -24,7 +26,7 @@ class TransactionsProvider with ChangeNotifier {
   List<Category> categoryList = [];
 
   Future<void> deleteData() async {
-    await DBHelper.clearData();
+    await _db.clearData();
     notifyListeners();
   }
 
@@ -45,7 +47,7 @@ class TransactionsProvider with ChangeNotifier {
   Future<void> fetchCategories() async {
     categoryList = [];
 
-    final datalist = await DBHelper.getData('categories');
+    final datalist = await _db.fetch('categories');
 
     for (var item in datalist) {
       categoryList.add(
@@ -72,7 +74,7 @@ class TransactionsProvider with ChangeNotifier {
       "color": category.color.toARGB32(),
       "name": category.name,
     };
-    category.id = await DBHelper.insert('categories', categoryObject);
+    category.id = await _db.insert('categories', categoryObject);
     categoryList.add(category);
   }
 
@@ -96,7 +98,7 @@ class TransactionsProvider with ChangeNotifier {
     }
 
     // Add transaction to the database
-    transaction.id = await DBHelper.insert('transactions', transactionObject);
+    transaction.id = await _db.insert('transactions', transactionObject);
 
     // Refresh the transaction summary and chart data
     if (transaction.type == TransactionType.deposit) {
@@ -125,7 +127,7 @@ class TransactionsProvider with ChangeNotifier {
       transactionObject['category'] = null;
     }
 
-    await DBHelper.update(
+    await _db.update(
       'transactions',
       transactionObject,
       DBWhere(
@@ -143,7 +145,7 @@ class TransactionsProvider with ChangeNotifier {
   }
 
   Future<void> deleteTransaction(int transactionId) async {
-    await DBHelper.delete(
+    await _db.delete(
       'transactions',
       DBWhere(
         column: 'id',
@@ -172,7 +174,7 @@ class TransactionsProvider with ChangeNotifier {
     );
 
     // Fetch transactions from the database
-    final dataList = await DBHelper.fetchWhereMultiple('transactions', [
+    final dataList = await _db.fetchWhereMultiple('transactions', [
       DBWhere(
         column: 'date',
         operation: WhereOperation.between,
@@ -194,7 +196,7 @@ class TransactionsProvider with ChangeNotifier {
       transactions.add(
         Transaction(
           id: item['id'],
-          account: await AccountProvider.fetchAccountById(item['account_id']),
+          account: activeAccount,
           type: TransactionType.values[item['type']],
           amount: item['amount'],
           date: DateTime.parse(item['date']),
@@ -220,7 +222,7 @@ class TransactionsProvider with ChangeNotifier {
         ? DateHelper.getCurrentMonthRange()
         : DateHelper.getCurrentWeekRange();
 
-    final dataList = await DBHelper.fetchWhereMultiple('transactions', [
+    final dataList = await _db.fetchWhereMultiple('transactions', [
       DBWhere(
         column: 'date',
         operation: WhereOperation.between,
@@ -240,7 +242,7 @@ class TransactionsProvider with ChangeNotifier {
       summaryTransactions.add(
         Transaction(
           id: item['id'],
-          account: await AccountProvider.fetchAccountById(item['account_id']),
+          account: activeAccount,
           type: TransactionType.values[item['type']],
           amount: item['amount'],
           date: DateTime.parse(item['date']),

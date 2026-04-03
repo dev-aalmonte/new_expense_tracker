@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:new_expense_tracker/pages/tabs_page.dart';
+import 'package:new_expense_tracker/pages/transactions/tabs_page.dart';
 import 'package:flutter/material.dart';
 
 class SplashPage extends StatefulWidget {

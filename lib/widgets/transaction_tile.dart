@@ -3,7 +3,7 @@ import 'package:new_expense_tracker/models/transaction.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_multi_formatter/flutter_multi_formatter.dart';
 import 'package:intl/intl.dart';
-import 'package:new_expense_tracker/pages/add_transaction_page.dart';
+import 'package:new_expense_tracker/pages/transactions/add_transaction_page.dart';
 import 'package:new_expense_tracker/providers/transactions_provider.dart';
 import 'package:provider/provider.dart';
 

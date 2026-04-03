@@ -1,10 +1,11 @@
+import 'package:new_expense_tracker/interface/i_db_helper.dart';
 import 'package:new_expense_tracker/models/db_where.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sqflite/sqflite.dart' as sql;
 import 'package:path/path.dart' as path;
 import 'package:sqflite/sqlite_api.dart';
 
-class DBHelper {
+class DBHelper implements IDBHelper {
   static Future<Database> database() async {
     final dbPath = await sql.getDatabasesPath();
     return sql.openDatabase(
@@ -56,12 +57,14 @@ class DBHelper {
     return result;
   }
 
-  static Future<int> insert(String table, Map<String, dynamic> data) async {
+  @override
+  Future<int> insert(String table, Map<String, dynamic> data) async {
     final db = await DBHelper.database();
     return db.insert(table, data, conflictAlgorithm: ConflictAlgorithm.replace);
   }
 
-  static Future<int> update(
+  @override
+  Future<int> update(
     String table,
     Map<String, dynamic> values,
     DBWhere where,
@@ -75,17 +78,20 @@ class DBHelper {
     );
   }
 
-  static Future<int> delete(String table, DBWhere where) async {
+  @override
+  Future<int> delete(String table, DBWhere where) async {
     final db = await DBHelper.database();
     return db.delete(table, where: where.toString(), whereArgs: [where.value]);
   }
 
-  static Future<List<Map<String, dynamic>>> getData(String table) async {
+  @override
+  Future<List<Map<String, dynamic>>> fetch(String table) async {
     final db = await DBHelper.database();
     return db.query(table, orderBy: "id DESC");
   }
 
-  static Future<List<Map<String, dynamic>>> fetchWhere(
+  @override
+  Future<List<Map<String, dynamic>>> fetchWhere(
     String table,
     String column,
     var value,
@@ -94,7 +100,8 @@ class DBHelper {
     return db.query(table, where: '$column = ?', whereArgs: [value]);
   }
 
-  static Future<List<Map<String, dynamic>>> fetchWhereMultiple(
+  @override
+  Future<List<Map<String, dynamic>>> fetchWhereMultiple(
     String table,
     List<DBWhere> arguments,
   ) async {
@@ -119,7 +126,8 @@ class DBHelper {
     return db.query(table, where: where, whereArgs: values);
   }
 
-  static Future<List<Map<String, dynamic>>> fetchWhereBetween(
+  @override
+  Future<List<Map<String, dynamic>>> fetchWhereBetween(
     String table,
     String column,
     List range,
@@ -128,7 +136,8 @@ class DBHelper {
     return db.query(table, where: '$column BETWEEN ? AND ?', whereArgs: range);
   }
 
-  static Future<void> clearData() async {
+  @override
+  Future<void> clearData() async {
     final dbPath = await sql.getDatabasesPath();
     final SharedPreferences prefs = await SharedPreferences.getInstance();
 

@@ -1,8 +1,8 @@
 import 'package:new_expense_tracker/models/account.dart';
-import 'package:new_expense_tracker/pages/add_transaction_page.dart';
-import 'package:new_expense_tracker/pages/chart_page.dart';
-import 'package:new_expense_tracker/pages/home_page.dart';
-import 'package:new_expense_tracker/pages/transactions_page.dart';
+import 'package:new_expense_tracker/pages/transactions/add_transaction_page.dart';
+import 'package:new_expense_tracker/pages/transactions/chart_page.dart';
+import 'package:new_expense_tracker/pages/transactions/home_page.dart';
+import 'package:new_expense_tracker/pages/transactions/transactions_page.dart';
 import 'package:new_expense_tracker/providers/account_provider.dart';
 import 'package:new_expense_tracker/providers/transactions_provider.dart';
 import 'package:flutter/material.dart';
