@@ -132,8 +132,6 @@ void main() {
         id: 1,
         name: "Adonis Almonte",
         accNumber: "123456",
-        available: 0,
-        spent: 0,
       );
 
       // Act
@@ -156,8 +154,6 @@ void main() {
         id: 1,
         name: "Adonis Almonte",
         accNumber: "123456",
-        available: 0,
-        spent: 0,
       );
 
       // Act
@@ -182,8 +178,6 @@ void main() {
           id: 1,
           name: "Adonis Almonte",
           accNumber: "123456",
-          available: 0,
-          spent: 0,
         );
 
         final transaction = Transaction(
@@ -216,8 +210,6 @@ void main() {
         id: 1,
         name: "Adonis Almonte",
         accNumber: "123456",
-        available: 0,
-        spent: 0,
       );
 
       final category = Category(id: 1, name: 'Bills', color: Colors.orange);
@@ -257,8 +249,6 @@ void main() {
         id: 1,
         name: "Adonis Almonte",
         accNumber: "123456",
-        available: 0,
-        spent: 0,
       );
 
       await provider.fetchTransactions(currentAccount);
@@ -297,8 +287,6 @@ void main() {
         id: 1,
         name: "Adonis Almonte",
         accNumber: "123456",
-        available: 0,
-        spent: 0,
       );
 
       await provider.fetchTransactions(currentAccount);
@@ -326,8 +314,6 @@ void main() {
         id: 1,
         name: "Adonis Almonte",
         accNumber: "123456",
-        available: 0,
-        spent: 0,
       );
 
       await provider.fetchTransactions(currentAccount);
@@ -358,13 +344,7 @@ void main() {
 
       await provider.fetchCategories();
       await provider.fetchTransactions(
-        Account(
-          id: 1,
-          name: "Adonis Almonte",
-          accNumber: "123456",
-          available: 0,
-          spent: 0,
-        ),
+        Account(id: 1, name: "Adonis Almonte", accNumber: "123456"),
       );
     }
 

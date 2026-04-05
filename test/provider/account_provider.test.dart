@@ -69,12 +69,7 @@ void main() {
   test("Add an account to DB", () async {
     // Arrange: mock insert to return the new ID
     when(() => mockDb.insert('accounts', any())).thenAnswer((_) async => 99);
-    final account = Account(
-      name: 'Alex Almonte',
-      accNumber: '147258',
-      available: 0,
-      spent: 0,
-    );
+    final account = Account(name: 'Alex Almonte', accNumber: '147258');
 
     // Act
     await provider.addAccount(account);

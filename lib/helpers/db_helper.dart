@@ -1,3 +1,5 @@
+import 'dart:io';
+import 'package:new_expense_tracker/database/database_versions.dart';
 import 'package:new_expense_tracker/interface/i_db_helper.dart';
 import 'package:new_expense_tracker/models/db_where.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -6,46 +8,50 @@ import 'package:path/path.dart' as path;
 import 'package:sqflite/sqlite_api.dart';
 
 class DBHelper implements IDBHelper {
+  static Future<void> backupDatabase() async {
+    final dbPath = await sql.getDatabasesPath();
+    final original = File(path.join(dbPath, 'expenses.db'));
+    final backup = File(path.join(dbPath, 'expenses_backup.db'));
+
+    if (await original.exists()) {
+      await original.copy(backup.path);
+    }
+  }
+
+  static Future<void> restoreDatabase() async {
+    final dbPath = await sql.getDatabasesPath();
+    final original = File(path.join(dbPath, 'expenses.db'));
+    final backup = File(path.join(dbPath, 'expenses_backup.db'));
+
+    if (await backup.exists()) {
+      await backup.copy(original.path);
+      await backup.delete();
+    }
+  }
+
+  static Future<void> _migrate(Database db, int oldv, int newv) async {
+    if (oldv < 1 && newv >= 1) await DatabaseVersions.base(db);
+    if (oldv < 2 && newv >= 2) await DatabaseVersions.v2(db);
+    if (oldv < 3 && newv >= 3) await DatabaseVersions.v3(db);
+    if (oldv < 4 && newv >= 4) await DatabaseVersions.v4(db);
+  }
+
   static Future<Database> database() async {
     final dbPath = await sql.getDatabasesPath();
     return sql.openDatabase(
       path.join(dbPath, 'expenses.db'),
-      onUpgrade: (db, oldv, newv) {
-        // Transaction table
-        db.execute("""CREATE TABLE IF NOT EXISTS transactions(
-          id INTEGER PRIMARY KEY NOT NULL,
-          account_id INTEGER NOT NULL,
-          type INTEGER NOT NULL,
-          amount REAL NOT NULL,
-          date TEXT NOT NULL,
-          category INTEGER,
-          description TEXT)
-        """);
-
-        // User table
-        db.execute("""CREATE TABLE IF NOT EXISTS user_card(
-          id INTEGER PRIMARY KEY NOT NULL,
-          total REAL NOT NULL,
-          spent REAL NOT NULL)
-        """);
-
-        // Account Table
-        db.execute("""CREATE TABLE IF NOT EXISTS accounts(
-          id INTEGER PRIMARY KEY NOT NULL,
-          name TEXT NOT NULL,
-          acc_number TEXT NOT NULL UNIQUE,
-          available REAL NOT NULL,
-          spent REAL NOT NULL)
-        """);
-
-        // Categories Table
-        db.execute("""CREATE TABLE IF NOT EXISTS categories(
-          id INTEGER PRIMARY KEY NOT NULL,
-          color TEXT NOT NULL,
-          name TEXT NOT NULL)
-        """);
+      onCreate: (db, version) async {
+        await _migrate(db, 0, version);
       },
-      version: 7,
+      onUpgrade: (db, oldv, newv) async {
+        await _migrate(db, oldv, newv);
+      },
+      onDowngrade: (db, oldv, newv) async {
+        await db.close();
+        await DBHelper.backupDatabase();
+        await onDatabaseDowngradeDelete(db, oldv, newv);
+      },
+      version: 4,
     );
   }
 

@@ -20,8 +20,6 @@ class _AddAccountPageState extends State<AddAccountPage> {
     final Account account = Account(
       name: _accountNameController.text,
       accNumber: uuid.v1(),
-      available: 0,
-      spent: 0,
     );
 
     Provider.of<AccountProvider>(context, listen: false).addAccount(account);

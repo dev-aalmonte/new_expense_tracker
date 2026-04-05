@@ -27,8 +27,6 @@ class AccountProvider with ChangeNotifier {
             id: item['id'],
             name: item['name'],
             accNumber: item['acc_number'],
-            available: item['available'],
-            spent: item['spent'],
           ),
         )
         .toList();
@@ -43,8 +41,6 @@ class AccountProvider with ChangeNotifier {
             id: item['id'],
             name: item['name'],
             accNumber: item['acc_number'],
-            available: item['available'],
-            spent: item['spent'],
           ),
         )
         .toList()[0];
@@ -52,12 +48,7 @@ class AccountProvider with ChangeNotifier {
   }
 
   Future<void> addAccount(Account account) async {
-    var accountObject = {
-      "name": account.name,
-      "acc_number": account.accNumber,
-      "available": account.available,
-      "spent": account.spent,
-    };
+    var accountObject = {"name": account.name, "acc_number": account.accNumber};
 
     account.id = await _db.insert('accounts', accountObject);
     _accounts.add(account);
@@ -71,8 +62,6 @@ class AccountProvider with ChangeNotifier {
       "id": account.id,
       "name": account.name,
       "acc_number": account.accNumber,
-      "available": account.available,
-      "spent": account.spent,
     };
 
     await _db.update(
