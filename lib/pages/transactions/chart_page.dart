@@ -29,10 +29,12 @@ class _ChartPageState extends State<ChartPage> {
       context,
       listen: false,
     );
-    barChartYMax = transactionsProvider.getExpensesChartMaxValue();
     dateRange = transactionsProvider.selectedDateRange;
     expensesChartData = transactionsProvider.getExpensesDataChart(
       dateRange: dateRange,
+    );
+    barChartYMax = transactionsProvider.getExpensesChartMaxValue(
+      expensesChartData,
     );
     expensesCategoryChartData = transactionsProvider
         .getExpensesCategoryDataChart(dateRange: dateRange);
@@ -89,9 +91,11 @@ class _ChartPageState extends State<ChartPage> {
 
   void _loadChartData() {
     setState(() {
-      barChartYMax = transactionsProvider.getExpensesChartMaxValue();
       expensesChartData = transactionsProvider.getExpensesDataChart(
         dateRange: dateRange,
+      );
+      barChartYMax = transactionsProvider.getExpensesChartMaxValue(
+        expensesChartData,
       );
       expensesCategoryChartData = transactionsProvider
           .getExpensesCategoryDataChart(dateRange: dateRange);

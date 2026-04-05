@@ -302,11 +302,9 @@ class TransactionsProvider with ChangeNotifier {
   }
 
   // Chart Functions
-  double getExpensesChartMaxValue() {
-    final Map<String, dynamic> transactionChartDataByWeekYear =
-        fetchTransactionsByWeekYear();
+  double getExpensesChartMaxValue(Map<String, dynamic> chartData) {
     double maxValue = 0;
-    for (var data in transactionChartDataByWeekYear.values) {
+    for (var data in chartData.values) {
       maxValue = max(max(data['deposit'], data['spent']), maxValue);
     }
     return maxValue;

@@ -353,9 +353,10 @@ void main() {
       () async {
         // Arrange
         await seedTransactions();
+        final expenseChartData = provider.fetchTransactionsByWeekYear();
 
         // Act
-        final maxValue = provider.getExpensesChartMaxValue();
+        final maxValue = provider.getExpensesChartMaxValue(expenseChartData);
 
         // Assert — deposits are 100 and 5000, spent is 150; max should be 5000
         expect(maxValue, 5000.0);

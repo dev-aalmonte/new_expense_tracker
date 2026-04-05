@@ -136,12 +136,7 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
           SnackBar(
             backgroundColor: Colors.red,
             content: const Text("Transaction should have amount"),
-            action: SnackBarAction(
-              textColor: Colors.white,
-              label: 'Ok',
-              onPressed: () =>
-                  ScaffoldMessenger.of(context).hideCurrentSnackBar(),
-            ),
+            duration: Duration(seconds: 5),
           ),
         );
       }
